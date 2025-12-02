@@ -1,0 +1,1175 @@
+// PetMedi Database Schema
+// 동물병원 통합 의료 플랫폼 데이터베이스 스키마
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =====================================================
+// 열거형 (Enums)
+// =====================================================
+
+enum UserRole {
+  SUPER_ADMIN    // 시스템 관리자
+  HOSPITAL_ADMIN // 병원 관리자
+  VET            // 수의사
+  STAFF          // 직원
+  GUARDIAN       // 보호자
+}
+
+enum Species {
+  DOG      // 개
+  CAT      // 고양이
+  BIRD     // 조류
+  RABBIT   // 토끼
+  HAMSTER  // 햄스터
+  FISH     // 어류
+  REPTILE  // 파충류
+  OTHER    // 기타
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum VisitType {
+  INITIAL       // 초진
+  FOLLOW_UP     // 재진
+  EMERGENCY     // 응급
+  VACCINATION   // 예방접종
+  SURGERY       // 수술
+  CHECKUP       // 건강검진
+  GROOMING      // 미용
+  OTHER         // 기타
+}
+
+enum ConsentType {
+  ALL        // 전체 공유
+  SELECTIVE  // 선택적 공유
+}
+
+enum HospitalStatus {
+  PENDING   // 승인 대기
+  ACTIVE    // 활성
+  SUSPENDED // 정지
+  INACTIVE  // 비활성
+}
+
+enum AppointmentStatus {
+  SCHEDULED    // 예약됨
+  CONFIRMED    // 확정
+  CHECKED_IN   // 내원 완료
+  IN_PROGRESS  // 진료 중
+  COMPLETED    // 완료
+  CANCELLED    // 취소
+  NO_SHOW      // 미방문
+}
+
+enum AppointmentType {
+  CONSULTATION  // 일반 진료
+  VACCINATION   // 예방접종
+  SURGERY       // 수술
+  CHECKUP       // 건강검진
+  GROOMING      // 미용
+  FOLLOW_UP     // 재진
+  EMERGENCY     // 응급
+  OTHER         // 기타
+}
+
+enum InvoiceStatus {
+  DRAFT         // 초안 (작성 중)
+  PENDING       // 결제 대기
+  PARTIAL       // 부분 결제
+  PAID          // 결제 완료
+  OVERDUE       // 연체
+  CANCELLED     // 취소
+  REFUNDED      // 환불
+}
+
+enum PaymentMethod {
+  CASH          // 현금
+  CARD          // 카드
+  TRANSFER      // 계좌이체
+  MOBILE        // 모바일 결제 (카카오페이, 네이버페이 등)
+  INSURANCE     // 펫보험
+  POINT         // 포인트
+  OTHER         // 기타
+}
+
+enum PaymentStatus {
+  PENDING       // 대기
+  COMPLETED     // 완료
+  FAILED        // 실패
+  CANCELLED     // 취소
+  REFUNDED      // 환불
+}
+
+enum InvoiceItemType {
+  CONSULTATION  // 진료비
+  SURGERY       // 수술비
+  MEDICATION    // 약품비
+  INJECTION     // 주사비
+  LAB_TEST      // 검사비
+  IMAGING       // 영상촬영비 (X-ray, 초음파 등)
+  HOSPITALIZATION // 입원비
+  GROOMING      // 미용비
+  VACCINATION   // 예방접종비
+  SUPPLIES      // 의료용품비
+  DISCOUNT      // 할인
+  OTHER         // 기타
+}
+
+// =====================================================
+// 재고 관리 열거형
+// =====================================================
+
+enum ProductType {
+  MEDICATION      // 의약품
+  VACCINE         // 백신
+  SUPPLIES        // 소모품
+  EQUIPMENT       // 장비
+  FOOD            // 사료/간식
+  SUPPLEMENT      // 영양제
+  OTHER           // 기타
+}
+
+enum ProductUnit {
+  EA              // 개
+  BOX             // 박스
+  PACK            // 팩
+  ML              // 밀리리터
+  L               // 리터
+  MG              // 밀리그램
+  G               // 그램
+  KG              // 킬로그램
+  DOSE            // 도스 (1회 투여량)
+  VIAL            // 바이알
+  AMPULE          // 앰플
+  BOTTLE          // 병
+  TUBE            // 튜브
+  SHEET           // 시트
+}
+
+enum InventoryTransactionType {
+  PURCHASE        // 구매/입고
+  SALE            // 판매/출고
+  ADJUSTMENT      // 재고 조정
+  RETURN          // 반품
+  EXPIRED         // 유효기간 만료 폐기
+  DAMAGED         // 파손 폐기
+  TRANSFER_IN     // 전입
+  TRANSFER_OUT    // 전출
+  INITIAL         // 초기 재고
+}
+
+enum PurchaseOrderStatus {
+  DRAFT           // 초안
+  PENDING         // 승인 대기
+  APPROVED        // 승인됨
+  ORDERED         // 발주됨
+  PARTIAL         // 부분 입고
+  RECEIVED        // 입고 완료
+  CANCELLED       // 취소
+}
+
+enum SupplierStatus {
+  ACTIVE          // 활성
+  INACTIVE        // 비활성
+  SUSPENDED       // 거래 중지
+}
+
+// =====================================================
+// 사용자 & 인증
+// =====================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  name          String
+  phone         String?
+  role          UserRole  @default(GUARDIAN)
+  isActive      Boolean   @default(true) @map("is_active")
+  emailVerified DateTime? @map("email_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  hospitalStaff   HospitalStaff[]
+  medicalRecords  MedicalRecord[]  @relation("VetRecords")
+  guardianAnimals GuardianAnimal[]
+  shareConsents   ShareConsent[]
+  appointmentsAsGuardian Appointment[] @relation("GuardianAppointments")
+  appointmentsAsVet      Appointment[] @relation("VetAppointments")
+  invoices        Invoice[]        @relation("GuardianInvoices")
+  notifications   Notification[]
+  deviceTokens    DeviceToken[]
+
+  @@map("users")
+}
+
+// =====================================================
+// 병원 관리
+// =====================================================
+
+model Hospital {
+  id                String         @id @default(cuid())
+  name              String
+  businessNumber    String         @unique @map("business_number") // 사업자등록번호
+  licenseNumber     String?        @map("license_number") // 동물병원 개설 허가번호
+  address           String
+  addressDetail     String?        @map("address_detail")
+  zipCode           String?        @map("zip_code")
+  phone             String
+  email             String?
+  website           String?
+  description       String?
+  logoUrl           String?        @map("logo_url")
+  status            HospitalStatus @default(PENDING)
+  operatingHours    Json?          @map("operating_hours") // 영업시간 JSON
+  holidayInfo       String?        @map("holiday_info")
+  latitude          Float?
+  longitude         Float?
+  isNetworkMember   Boolean        @default(false) @map("is_network_member") // PetMedi 네트워크 가입 여부
+  networkJoinedAt   DateTime?      @map("network_joined_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  staff          HospitalStaff[]
+  medicalRecords MedicalRecord[]
+  departments    Department[]
+  appointments   Appointment[]
+  timeSlots      TimeSlot[]
+  holidays       HospitalHoliday[]
+  invoices       Invoice[]
+  payments       Payment[]
+  // 재고 관리
+  productCategories    ProductCategory[]
+  suppliers            Supplier[]
+  products             Product[]
+  inventoryStocks      InventoryStock[]
+  inventoryTransactions InventoryTransaction[]
+  purchaseOrders       PurchaseOrder[]
+  // 알림 시스템
+  notifications         Notification[]
+  notificationTemplates NotificationTemplate[]
+  notificationSettings  NotificationSetting?
+
+  @@map("hospitals")
+}
+
+model HospitalStaff {
+  id         String   @id @default(cuid())
+  hospitalId String   @map("hospital_id")
+  userId     String   @map("user_id")
+  position   String?  // 직책
+  licenseNo  String?  @map("license_no") // 수의사 면허번호
+  isActive   Boolean  @default(true) @map("is_active")
+  joinedAt   DateTime @default(now()) @map("joined_at")
+
+  // Relations
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, userId])
+  @@map("hospital_staff")
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  hospitalId  String   @map("hospital_id")
+  name        String   // 진료과목 (내과, 외과, 피부과 등)
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@map("departments")
+}
+
+// =====================================================
+// 동물 관리
+// =====================================================
+
+model Animal {
+  id            String    @id @default(cuid())
+  code          String    @unique // 고유코드: D-20200315-0000001
+  microchipId   String?   @unique @map("microchip_id") // 마이크로칩 번호 (15자리)
+  species       Species
+  name          String
+  breed         String?   // 품종
+  birthDate     DateTime? @map("birth_date")
+  birthDateType String?   @map("birth_date_type") // EXACT, ESTIMATED, UNKNOWN
+  gender        Gender    @default(UNKNOWN)
+  isNeutered    Boolean   @default(false) @map("is_neutered")
+  weight        Float?    // 체중 (kg)
+  color         String?   // 모색
+  photoUrl      String?   @map("photo_url")
+  notes         String?   // 특이사항
+  isDeceased    Boolean   @default(false) @map("is_deceased")
+  deceasedAt    DateTime? @map("deceased_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  guardians      GuardianAnimal[]
+  medicalRecords MedicalRecord[]
+  shareConsents  ShareConsent[]
+  vaccinations   Vaccination[]
+  appointments   Appointment[]
+  invoices       Invoice[]
+
+  @@index([code])
+  @@index([microchipId])
+  @@index([species, name])
+  @@map("animals")
+}
+
+model GuardianAnimal {
+  id         String   @id @default(cuid())
+  guardianId String   @map("guardian_id")
+  animalId   String   @map("animal_id")
+  isPrimary  Boolean  @default(false) @map("is_primary") // 주 보호자 여부
+  relation   String?  // 관계 (가족, 임시보호 등)
+  startDate  DateTime @default(now()) @map("start_date")
+  endDate    DateTime? @map("end_date")
+
+  // Relations
+  guardian User   @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  animal   Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@unique([guardianId, animalId])
+  @@map("guardian_animals")
+}
+
+// =====================================================
+// 진료 기록
+// =====================================================
+
+model MedicalRecord {
+  id          String    @id @default(cuid())
+  animalId    String    @map("animal_id")
+  hospitalId  String    @map("hospital_id")
+  vetId       String    @map("vet_id")
+  visitDate   DateTime  @map("visit_date")
+  visitType   VisitType @map("visit_type")
+
+  // SOAP 진료 기록
+  subjective  String?   @db.Text // 주관적 소견 (보호자 진술)
+  objective   String?   @db.Text // 객관적 소견 (검사 결과)
+  assessment  String?   @db.Text // 평가/진단
+  plan        String?   @db.Text // 치료 계획
+
+  // 추가 정보
+  chiefComplaint String?  @map("chief_complaint") // 주호소
+  diagnosis      String?  // 진단명
+  weight         Float?   // 진료 시 체중
+  temperature    Float?   // 체온
+  heartRate      Int?     @map("heart_rate") // 심박수
+  respiratoryRate Int?    @map("respiratory_rate") // 호흡수
+
+  // 메타 정보
+  isShared    Boolean  @default(false) @map("is_shared") // 네트워크 공유 여부
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  animal       Animal            @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  hospital     Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  vet          User              @relation("VetRecords", fields: [vetId], references: [id])
+  prescriptions Prescription[]
+  labResults   LabResult[]
+  attachments  RecordAttachment[]
+
+  @@index([animalId, visitDate])
+  @@index([hospitalId, visitDate])
+  @@map("medical_records")
+}
+
+model Prescription {
+  id              String   @id @default(cuid())
+  medicalRecordId String   @map("medical_record_id")
+  medicineName    String   @map("medicine_name")
+  dosage          String   // 용량
+  frequency       String   // 복용 빈도
+  duration        String   // 복용 기간
+  instructions    String?  // 복용 지침
+  quantity        Int?     // 처방 수량
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@map("prescriptions")
+}
+
+model LabResult {
+  id              String   @id @default(cuid())
+  medicalRecordId String   @map("medical_record_id")
+  testName        String   @map("test_name")
+  testType        String?  @map("test_type") // 혈액, 소변, 영상 등
+  result          String
+  unit            String?
+  referenceRange  String?  @map("reference_range")
+  isAbnormal      Boolean  @default(false) @map("is_abnormal")
+  notes           String?
+  testedAt        DateTime @map("tested_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@map("lab_results")
+}
+
+model RecordAttachment {
+  id              String   @id @default(cuid())
+  medicalRecordId String   @map("medical_record_id")
+  fileName        String   @map("file_name")
+  fileType        String   @map("file_type")
+  fileSize        Int      @map("file_size")
+  fileUrl         String   @map("file_url")
+  description     String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@map("record_attachments")
+}
+
+// =====================================================
+// 예방접종
+// =====================================================
+
+model Vaccination {
+  id              String    @id @default(cuid())
+  animalId        String    @map("animal_id")
+  vaccineName     String    @map("vaccine_name")
+  vaccineType     String?   @map("vaccine_type") // 종합백신, 광견병 등
+  manufacturer    String?
+  lotNumber       String?   @map("lot_number")
+  administeredAt  DateTime  @map("administered_at")
+  nextDueDate     DateTime? @map("next_due_date")
+  administeredBy  String?   @map("administered_by") // 접종 수의사
+  hospitalName    String?   @map("hospital_name")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@index([animalId, administeredAt])
+  @@map("vaccinations")
+}
+
+// =====================================================
+// 기록 공유 동의
+// =====================================================
+
+model ShareConsent {
+  id          String      @id @default(cuid())
+  animalId    String      @map("animal_id")
+  guardianId  String      @map("guardian_id")
+  consentType ConsentType @map("consent_type")
+  isActive    Boolean     @default(true) @map("is_active")
+  grantedAt   DateTime    @default(now()) @map("granted_at")
+  expiresAt   DateTime?   @map("expires_at")
+  revokedAt   DateTime?   @map("revoked_at")
+  ipAddress   String?     @map("ip_address")
+  userAgent   String?     @map("user_agent")
+
+  // Relations
+  animal   Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  guardian User   @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+
+  @@index([animalId, isActive])
+  @@map("share_consents")
+}
+
+// =====================================================
+// 동물 코드 시퀀스 (코드 생성용)
+// =====================================================
+
+model AnimalCodeSequence {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYYMMDD
+  sequence  Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("animal_code_sequences")
+}
+
+// =====================================================
+// 예약 관리
+// =====================================================
+
+model Appointment {
+  id              String            @id @default(cuid())
+  hospitalId      String            @map("hospital_id")
+  animalId        String            @map("animal_id")
+  guardianId      String            @map("guardian_id")
+  vetId           String?           @map("vet_id") // 담당 수의사 (선택)
+
+  // 예약 시간
+  appointmentDate DateTime          @map("appointment_date")
+  startTime       String            @map("start_time") // HH:mm 형식
+  endTime         String?           @map("end_time")   // HH:mm 형식
+  duration        Int               @default(30) // 예상 소요시간 (분)
+
+  // 예약 정보
+  type            AppointmentType   @default(CONSULTATION)
+  status          AppointmentStatus @default(SCHEDULED)
+  reason          String?           // 방문 사유
+  symptoms        String?           @db.Text // 증상 설명
+  notes           String?           @db.Text // 메모
+
+  // 접수 정보
+  checkedInAt     DateTime?         @map("checked_in_at")
+  completedAt     DateTime?         @map("completed_at")
+  cancelledAt     DateTime?         @map("cancelled_at")
+  cancelReason    String?           @map("cancel_reason")
+
+  // 알림
+  reminderSent    Boolean           @default(false) @map("reminder_sent")
+  reminderSentAt  DateTime?         @map("reminder_sent_at")
+
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  hospital        Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  animal          Animal            @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  guardian        User              @relation("GuardianAppointments", fields: [guardianId], references: [id])
+  vet             User?             @relation("VetAppointments", fields: [vetId], references: [id])
+
+  @@index([hospitalId, appointmentDate])
+  @@index([animalId, appointmentDate])
+  @@index([guardianId, appointmentDate])
+  @@index([status])
+  @@map("appointments")
+}
+
+model TimeSlot {
+  id          String   @id @default(cuid())
+  hospitalId  String   @map("hospital_id")
+  dayOfWeek   Int      @map("day_of_week") // 0=일요일, 1=월요일, ..., 6=토요일
+  startTime   String   @map("start_time") // HH:mm
+  endTime     String   @map("end_time")   // HH:mm
+  slotDuration Int     @default(30) @map("slot_duration") // 슬롯 단위 (분)
+  maxAppointments Int  @default(1) @map("max_appointments") // 동시 예약 가능 수
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital    Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, dayOfWeek, startTime])
+  @@map("time_slots")
+}
+
+model HospitalHoliday {
+  id          String   @id @default(cuid())
+  hospitalId  String   @map("hospital_id")
+  date        DateTime // 휴무일
+  reason      String?  // 휴무 사유 (명절, 정기휴무 등)
+  isRecurring Boolean  @default(false) @map("is_recurring") // 매년 반복 여부
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital    Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, date])
+  @@map("hospital_holidays")
+}
+
+// =====================================================
+// 수납/결제 관리
+// =====================================================
+
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique @map("invoice_number") // 청구서 번호: INV-YYYYMMDD-0001
+  hospitalId      String        @map("hospital_id")
+  animalId        String        @map("animal_id")
+  guardianId      String        @map("guardian_id")
+  medicalRecordId String?       @map("medical_record_id") // 연결된 진료 기록 (선택)
+  appointmentId   String?       @map("appointment_id") // 연결된 예약 (선택)
+
+  // 금액 정보
+  subtotal        Float         @default(0) // 소계 (할인 전)
+  discountAmount  Float         @default(0) @map("discount_amount") // 할인 금액
+  taxAmount       Float         @default(0) @map("tax_amount") // 부가세 (선택적)
+  totalAmount     Float         @default(0) @map("total_amount") // 총액
+  paidAmount      Float         @default(0) @map("paid_amount") // 결제된 금액
+  dueAmount       Float         @default(0) @map("due_amount") // 미결제 금액
+
+  // 상태 및 날짜
+  status          InvoiceStatus @default(DRAFT)
+  issueDate       DateTime      @default(now()) @map("issue_date") // 발행일
+  dueDate         DateTime?     @map("due_date") // 결제 기한
+  paidAt          DateTime?     @map("paid_at") // 완납일
+
+  // 추가 정보
+  notes           String?       @db.Text // 메모
+  internalNotes   String?       @db.Text @map("internal_notes") // 내부 메모
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  createdBy       String?       @map("created_by") // 작성자 ID
+
+  // Relations
+  hospital        Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  animal          Animal        @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  guardian        User          @relation("GuardianInvoices", fields: [guardianId], references: [id])
+  items           InvoiceItem[]
+  payments        Payment[]
+
+  @@index([hospitalId, issueDate])
+  @@index([guardianId, status])
+  @@index([animalId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id            String          @id @default(cuid())
+  invoiceId     String          @map("invoice_id")
+
+  // 항목 정보
+  type          InvoiceItemType @default(OTHER)
+  name          String          // 항목명
+  description   String?         // 상세 설명
+  quantity      Int             @default(1) // 수량
+  unitPrice     Float           @map("unit_price") // 단가
+  amount        Float           // 금액 (수량 x 단가)
+
+  // 할인
+  discountRate  Float?          @map("discount_rate") // 할인율 (%)
+  discountAmount Float?         @map("discount_amount") // 할인 금액
+  finalAmount   Float           @map("final_amount") // 최종 금액
+
+  // 연결 정보
+  productId     String?         @map("product_id") // 재고 품목 ID (향후 연결)
+  prescriptionId String?        @map("prescription_id") // 처방 ID (향후 연결)
+
+  sortOrder     Int             @default(0) @map("sort_order") // 정렬 순서
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  invoice       Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  paymentNumber   String        @unique @map("payment_number") // 결제 번호: PAY-YYYYMMDD-0001
+  invoiceId       String        @map("invoice_id")
+  hospitalId      String        @map("hospital_id")
+
+  // 결제 정보
+  amount          Float         // 결제 금액
+  method          PaymentMethod @default(CASH)
+  status          PaymentStatus @default(PENDING)
+
+  // 카드 결제 정보
+  cardNumber      String?       @map("card_number") // 마스킹된 카드번호 (**** **** **** 1234)
+  cardCompany     String?       @map("card_company") // 카드사
+  cardApprovalNo  String?       @map("card_approval_no") // 승인번호
+  cardInstallment Int?          @map("card_installment") // 할부 개월 (0=일시불)
+
+  // 기타 결제 정보
+  transactionId   String?       @map("transaction_id") // PG사 거래 ID
+  receiptUrl      String?       @map("receipt_url") // 영수증 URL
+
+  // 환불 정보
+  refundAmount    Float?        @map("refund_amount") // 환불 금액
+  refundReason    String?       @map("refund_reason") // 환불 사유
+  refundedAt      DateTime?     @map("refunded_at") // 환불일
+
+  // 메모
+  notes           String?       @db.Text
+
+  paidAt          DateTime?     @map("paid_at") // 결제 완료일
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  processedBy     String?       @map("processed_by") // 처리자 ID
+
+  // Relations
+  invoice         Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  hospital        Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([hospitalId, paidAt])
+  @@index([status])
+  @@map("payments")
+}
+
+model InvoiceSequence {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYYMMDD
+  sequence  Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("invoice_sequences")
+}
+
+model PaymentSequence {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYYMMDD
+  sequence  Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("payment_sequences")
+}
+
+// =====================================================
+// 재고 관리
+// =====================================================
+
+model ProductCategory {
+  id          String   @id @default(cuid())
+  hospitalId  String   @map("hospital_id")
+  name        String   // 카테고리명 (주사제, 경구약, 소독용품 등)
+  description String?
+  parentId    String?  @map("parent_id") // 상위 카테고리 (계층 구조)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital    Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  parent      ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    ProductCategory[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  @@unique([hospitalId, name])
+  @@index([hospitalId])
+  @@map("product_categories")
+}
+
+model Supplier {
+  id              String         @id @default(cuid())
+  hospitalId      String         @map("hospital_id")
+  code            String         // 공급업체 코드: SUP-001
+  name            String
+  businessNumber  String?        @map("business_number") // 사업자등록번호
+  contactPerson   String?        @map("contact_person") // 담당자명
+  phone           String?
+  email           String?
+  address         String?
+  bankName        String?        @map("bank_name") // 은행명
+  bankAccount     String?        @map("bank_account") // 계좌번호
+  paymentTerms    String?        @map("payment_terms") // 결제 조건
+  notes           String?        @db.Text
+  status          SupplierStatus @default(ACTIVE)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  hospital        Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  products        Product[]
+  purchaseOrders  PurchaseOrder[]
+
+  @@unique([hospitalId, code])
+  @@index([hospitalId])
+  @@map("suppliers")
+}
+
+model Product {
+  id                String      @id @default(cuid())
+  hospitalId        String      @map("hospital_id")
+  categoryId        String?     @map("category_id")
+  supplierId        String?     @map("supplier_id") // 기본 공급업체
+
+  // 기본 정보
+  code              String      // 품목 코드: MED-001, VAC-001
+  name              String
+  genericName       String?     @map("generic_name") // 일반명 (약품의 경우)
+  type              ProductType @default(OTHER)
+  unit              ProductUnit @default(EA)
+  description       String?     @db.Text
+  barcode           String?     // 바코드
+
+  // 가격 정보
+  costPrice         Float       @default(0) @map("cost_price") // 원가
+  sellingPrice      Float       @default(0) @map("selling_price") // 판매가
+  taxRate           Float       @default(0) @map("tax_rate") // 부가세율 (%)
+
+  // 재고 관리
+  minStockLevel     Int         @default(0) @map("min_stock_level") // 최소 재고량 (경고 알림)
+  maxStockLevel     Int?        @map("max_stock_level") // 최대 재고량
+  reorderPoint      Int?        @map("reorder_point") // 재주문 시점
+  reorderQuantity   Int?        @map("reorder_quantity") // 재주문 수량
+
+  // 의약품 정보 (해당되는 경우)
+  manufacturer      String?     // 제조사
+  expirationMonths  Int?        @map("expiration_months") // 유효기간 (개월)
+  storageCondition  String?     @map("storage_condition") // 보관 조건
+  requiresPrescription Boolean  @default(false) @map("requires_prescription") // 처방 필요 여부
+
+  // 메타 정보
+  isActive          Boolean     @default(true) @map("is_active")
+  imageUrl          String?     @map("image_url")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  hospital          Hospital               @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  category          ProductCategory?       @relation(fields: [categoryId], references: [id])
+  supplier          Supplier?              @relation(fields: [supplierId], references: [id])
+  inventoryStocks   InventoryStock[]
+  inventoryTransactions InventoryTransaction[]
+  purchaseOrderItems    PurchaseOrderItem[]
+
+  @@unique([hospitalId, code])
+  @@index([hospitalId, type])
+  @@index([hospitalId, categoryId])
+  @@index([barcode])
+  @@map("products")
+}
+
+model InventoryStock {
+  id              String    @id @default(cuid())
+  hospitalId      String    @map("hospital_id")
+  productId       String    @map("product_id")
+
+  // 재고 정보
+  quantity        Int       @default(0) // 현재 재고 수량
+  reservedQty     Int       @default(0) @map("reserved_qty") // 예약된 수량
+  availableQty    Int       @default(0) @map("available_qty") // 사용 가능 수량
+
+  // 로트/배치 정보
+  lotNumber       String?   @map("lot_number") // 로트 번호
+  batchNumber     String?   @map("batch_number") // 배치 번호
+  expirationDate  DateTime? @map("expiration_date") // 유효기간
+
+  // 위치 정보
+  location        String?   // 보관 위치
+
+  lastCountedAt   DateTime? @map("last_counted_at") // 마지막 실사일
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  hospital        Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, productId, lotNumber])
+  @@index([hospitalId, productId])
+  @@index([expirationDate])
+  @@map("inventory_stocks")
+}
+
+model InventoryTransaction {
+  id                String                   @id @default(cuid())
+  transactionNumber String                   @unique @map("transaction_number") // TXN-YYYYMMDD-0001
+  hospitalId        String                   @map("hospital_id")
+  productId         String                   @map("product_id")
+
+  // 거래 정보
+  type              InventoryTransactionType
+  quantity          Int                      // 수량 (양수: 입고, 음수: 출고)
+  unitCost          Float?                   @map("unit_cost") // 단가
+  totalCost         Float?                   @map("total_cost") // 총액
+
+  // 참조 정보
+  referenceType     String?                  @map("reference_type") // INVOICE, PURCHASE_ORDER, ADJUSTMENT 등
+  referenceId       String?                  @map("reference_id") // 참조 문서 ID
+  lotNumber         String?                  @map("lot_number")
+  expirationDate    DateTime?                @map("expiration_date")
+
+  // 재고 변화
+  previousQty       Int                      @map("previous_qty") // 변경 전 수량
+  currentQty        Int                      @map("current_qty") // 변경 후 수량
+
+  // 메타 정보
+  notes             String?                  @db.Text
+  processedBy       String?                  @map("processed_by") // 처리자 ID
+  processedAt       DateTime                 @default(now()) @map("processed_at")
+  createdAt         DateTime                 @default(now()) @map("created_at")
+
+  // Relations
+  hospital          Hospital                 @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  product           Product                  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, productId])
+  @@index([hospitalId, processedAt])
+  @@index([type])
+  @@map("inventory_transactions")
+}
+
+model PurchaseOrder {
+  id              String              @id @default(cuid())
+  orderNumber     String              @unique @map("order_number") // PO-YYYYMMDD-0001
+  hospitalId      String              @map("hospital_id")
+  supplierId      String              @map("supplier_id")
+
+  // 발주 정보
+  status          PurchaseOrderStatus @default(DRAFT)
+  orderDate       DateTime?           @map("order_date") // 발주일
+  expectedDate    DateTime?           @map("expected_date") // 예상 입고일
+  receivedDate    DateTime?           @map("received_date") // 실제 입고일
+
+  // 금액 정보
+  subtotal        Float               @default(0)
+  taxAmount       Float               @default(0) @map("tax_amount")
+  totalAmount     Float               @default(0) @map("total_amount")
+
+  // 메타 정보
+  notes           String?             @db.Text
+  internalNotes   String?             @db.Text @map("internal_notes")
+  createdBy       String?             @map("created_by")
+  approvedBy      String?             @map("approved_by")
+  approvedAt      DateTime?           @map("approved_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  hospital        Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  supplier        Supplier            @relation(fields: [supplierId], references: [id])
+  items           PurchaseOrderItem[]
+
+  @@index([hospitalId, status])
+  @@index([supplierId])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String        @map("purchase_order_id")
+  productId       String        @map("product_id")
+
+  // 품목 정보
+  quantity        Int           // 주문 수량
+  unitPrice       Float         @map("unit_price") // 단가
+  amount          Float         // 금액
+
+  // 입고 정보
+  receivedQty     Int           @default(0) @map("received_qty") // 입고된 수량
+  lotNumber       String?       @map("lot_number")
+  expirationDate  DateTime?     @map("expiration_date")
+
+  sortOrder       Int           @default(0) @map("sort_order")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@map("purchase_order_items")
+}
+
+model InventoryTransactionSequence {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYYMMDD
+  sequence  Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("inventory_transaction_sequences")
+}
+
+model PurchaseOrderSequence {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYYMMDD
+  sequence  Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("purchase_order_sequences")
+}
+
+// =====================================================
+// 알림 시스템
+// =====================================================
+
+enum NotificationType {
+  APPOINTMENT_REMINDER   // 예약 알림
+  APPOINTMENT_CONFIRMED  // 예약 확정
+  APPOINTMENT_CANCELLED  // 예약 취소
+  PAYMENT_REQUEST       // 결제 요청
+  PAYMENT_COMPLETED     // 결제 완료
+  LOW_STOCK_ALERT       // 재고 부족 알림
+  VACCINATION_DUE       // 예방접종 예정
+  CHECKUP_DUE           // 정기검진 예정
+  CUSTOM                // 사용자 정의 알림
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  KAKAO
+  PUSH
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING     // 대기 중
+  SENT        // 발송 완료
+  DELIVERED   // 전달 완료
+  FAILED      // 발송 실패
+  CANCELLED   // 취소됨
+}
+
+model Notification {
+  id            String              @id @default(cuid())
+  hospitalId    String              @map("hospital_id")
+  recipientId   String              @map("recipient_id") // User ID (보호자/직원)
+
+  // 알림 유형 및 채널
+  type          NotificationType
+  channel       NotificationChannel
+  status        NotificationStatus  @default(PENDING)
+
+  // 콘텐츠
+  title         String              // 알림 제목
+  message       String              @db.Text // 알림 내용
+  data          Json?               // 추가 데이터 (연결된 예약 ID, 결제 ID 등)
+
+  // 예약 발송
+  scheduledAt   DateTime?           @map("scheduled_at") // 예약 발송 시간
+  sentAt        DateTime?           @map("sent_at") // 실제 발송 시간
+  deliveredAt   DateTime?           @map("delivered_at") // 전달 확인 시간
+
+  // 발송 결과
+  errorMessage  String?             @map("error_message") // 실패 시 에러 메시지
+  retryCount    Int                 @default(0) @map("retry_count") // 재시도 횟수
+  externalId    String?             @map("external_id") // 외부 서비스 ID (SMS, 카카오 등)
+
+  // 읽음 여부 (IN_APP 알림용)
+  readAt        DateTime?           @map("read_at")
+
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  hospital      Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  recipient     User                @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, status])
+  @@index([recipientId, status])
+  @@index([type, status])
+  @@index([scheduledAt, status])
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  id            String              @id @default(cuid())
+  hospitalId    String?             @map("hospital_id") // null이면 시스템 기본 템플릿
+
+  // 템플릿 정보
+  name          String              // 템플릿 이름
+  type          NotificationType    // 알림 유형
+  channel       NotificationChannel // 발송 채널
+
+  // 콘텐츠 템플릿 (변수: {{name}}, {{date}}, {{time}} 등)
+  subject       String?             // 이메일 제목 또는 카카오 알림톡 강조 타이틀
+  content       String              @db.Text // 본문 내용
+
+  // 카카오 알림톡 전용
+  kakaoTemplateCode String?         @map("kakao_template_code") // 카카오 템플릿 코드
+
+  isActive      Boolean             @default(true) @map("is_active")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  hospital      Hospital?           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, type, channel])
+  @@index([type, channel])
+  @@map("notification_templates")
+}
+
+model NotificationSetting {
+  id            String              @id @default(cuid())
+  hospitalId    String              @map("hospital_id")
+
+  // SMS 설정
+  smsEnabled    Boolean             @default(false) @map("sms_enabled")
+  smsProvider   String?             @map("sms_provider") // nhncloud, sens, twilio 등
+  smsApiKey     String?             @map("sms_api_key")
+  smsApiSecret  String?             @map("sms_api_secret")
+  smsSenderId   String?             @map("sms_sender_id") // 발신번호
+
+  // 카카오 알림톡 설정
+  kakaoEnabled  Boolean             @default(false) @map("kakao_enabled")
+  kakaoPlusFriendId String?         @map("kakao_plus_friend_id") // 카카오 플러스친구 ID
+  kakaoApiKey   String?             @map("kakao_api_key")
+  kakaoSenderKey String?            @map("kakao_sender_key")
+
+  // 이메일 설정
+  emailEnabled  Boolean             @default(false) @map("email_enabled")
+  emailProvider String?             @map("email_provider") // smtp, sendgrid, ses 등
+  emailHost     String?             @map("email_host")
+  emailPort     Int?                @map("email_port")
+  emailUser     String?             @map("email_user")
+  emailPassword String?             @map("email_password")
+  emailFromName String?             @map("email_from_name")
+  emailFromAddress String?          @map("email_from_address")
+
+  // 푸시 알림 설정
+  pushEnabled   Boolean             @default(false) @map("push_enabled")
+  fcmServerKey  String?             @map("fcm_server_key") // Firebase Cloud Messaging
+
+  // 기본 설정
+  appointmentReminderHours Int      @default(24) @map("appointment_reminder_hours") // 예약 알림 발송 시간 (시간 전)
+
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  hospital      Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId])
+  @@map("notification_settings")
+}
+
+// 디바이스 플랫폼
+enum DevicePlatform {
+  IOS
+  ANDROID
+  WEB
+}
+
+// 모바일 디바이스 토큰 (푸시 알림용)
+model DeviceToken {
+  id          String         @id @default(cuid())
+  userId      String         @map("user_id")
+  token       String         // FCM 토큰
+  platform    DevicePlatform
+  deviceId    String?        @map("device_id")    // 고유 디바이스 식별자
+  deviceName  String?        @map("device_name")  // 디바이스 이름 (예: iPhone 15)
+  appVersion  String?        @map("app_version")  // 앱 버전
+  isActive    Boolean        @default(true) @map("is_active")
+  lastUsedAt  DateTime       @default(now()) @map("last_used_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+  @@index([userId, isActive])
+  @@index([token])
+  @@map("device_tokens")
+}

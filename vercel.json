@@ -1,8 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @petmedi/database exec prisma generate && pnpm --filter @petmedi/web build",
-  "outputDirectory": "apps/web/.next",
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/web/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/web/$1"
+    }
+  ],
   "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "ignoreCommand": "exit 0"
+  "buildCommand": "pnpm --filter @petmedi/database exec prisma generate && pnpm --filter @petmedi/web build"
 }

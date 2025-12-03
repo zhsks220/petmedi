@@ -37,6 +37,8 @@ async function bootstrap() {
         allowedOrigins.includes('*') ||
         // Allow localhost for development
         origin.match(/^https?:\/\/localhost(:\d+)?$/) ||
+        // Allow Vercel deployments
+        origin.match(/\.vercel\.app$/) ||
         // Allow Expo development
         origin.match(/^exp:\/\//) ||
         // Allow React Native debugger

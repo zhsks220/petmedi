@@ -53,7 +53,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await login('admin@petmedi.com', 'admin123!');
+      await login('admin@petmedi.kr', 'admin123!');
       router.push('/dashboard');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };

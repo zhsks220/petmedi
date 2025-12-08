@@ -21,8 +21,13 @@ RUN pnpm install --frozen-lockfile
 COPY apps/api ./apps/api
 COPY packages ./packages
 
-# Prisma 클라이언트 생성
+# Prisma 클라이언트 생성 및 database 패키지 빌드
 RUN pnpm --filter @petmedi/database exec prisma generate
+RUN pnpm --filter @petmedi/database build
+
+# types, utils 패키지 빌드 (API에서 사용)
+RUN pnpm --filter @petmedi/types build || true
+RUN pnpm --filter @petmedi/utils build || true
 
 # API 빌드
 RUN pnpm --filter @petmedi/api build

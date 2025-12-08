@@ -171,23 +171,23 @@ export default function DashboardPage() {
 
   const statCards = [
     {
-      title: 'Total Animals',
+      title: '등록 동물',
       value: stats?.summary.totalAnimals || 0,
       icon: PawPrint,
     },
     {
-      title: 'Appointments Today',
+      title: '오늘 예약',
       value: stats?.appointments.today || 0,
       icon: Calendar,
     },
     {
-      title: 'Revenue (Monthly)',
+      title: '월 매출',
       value: stats?.summary.totalRevenue || 0,
       icon: DollarSign,
       format: 'currency',
     },
     {
-      title: 'Pending Payments',
+      title: '미수금',
       value: stats?.summary.pendingPayments || 0,
       icon: AlertTriangle,
       format: 'currency',
@@ -202,8 +202,8 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col h-full bg-slate-50">
       <PageHeader
-        title="Dashboard"
-        description="Overview of your hospital performance"
+        title="대시보드"
+        description="병원 현황을 한눈에 확인하세요"
         icon={LayoutGrid}
       >
         {hospitals.length > 0 && (
@@ -221,11 +221,11 @@ export default function DashboardPage() {
         )}
         <Button variant="outline" size="sm" className="h-8 gap-2 hidden sm:flex">
           <Filter className="h-3.5 w-3.5" />
-          Filter
+          필터
         </Button>
         <Button variant="outline" size="sm" className="h-8 gap-2 hidden sm:flex">
           <Download className="h-3.5 w-3.5" />
-          Export
+          내보내기
         </Button>
       </PageHeader>
 
@@ -259,12 +259,12 @@ export default function DashboardPage() {
               <SlideUp delay={0.2}>
                 <Card>
                   <CardHeader>
-                    <CardTitle>Appointment Trends</CardTitle>
+                    <CardTitle>예약 추이</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[300px] w-full mt-4">
                       {isLoading ? (
-                        <div className="h-full flex items-center justify-center text-slate-400">Loading...</div>
+                        <div className="h-full flex items-center justify-center text-slate-400">로딩 중...</div>
                       ) : (
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={weeklyTrend}>
@@ -304,13 +304,13 @@ export default function DashboardPage() {
               <SlideUp delay={0.3}>
                 <Card>
                   <CardHeader>
-                    <CardTitle>Today's Appointments</CardTitle>
+                    <CardTitle>오늘의 예약</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
-                      <div className="py-8 text-center text-slate-400">Loading...</div>
+                      <div className="py-8 text-center text-slate-400">로딩 중...</div>
                     ) : !stats?.todayAppointments?.length ? (
-                      <div className="py-12 text-center text-slate-500 text-sm">No appointments scheduled for today.</div>
+                      <div className="py-12 text-center text-slate-500 text-sm">오늘 예정된 예약이 없습니다.</div>
                     ) : (
                       <div className="space-y-1">
                         {stats.todayAppointments.map((apt) => (
@@ -326,7 +326,7 @@ export default function DashboardPage() {
                             </div>
                             <div className="text-right">
                               <p className="text-xs font-semibold text-slate-900">
-                                {new Date(apt.scheduledTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                {new Date(apt.scheduledTime).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' })}
                               </p>
                               <span className={
                                 `inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium mt-1 ${apt.status === 'CONFIRMED' ? 'bg-blue-50 text-blue-700' :
@@ -351,7 +351,7 @@ export default function DashboardPage() {
               <SlideUp delay={0.4}>
                 <Card>
                   <CardHeader>
-                    <CardTitle>Species Distribution</CardTitle>
+                    <CardTitle>종 분포</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[200px] w-full flex items-center justify-center">
@@ -374,7 +374,7 @@ export default function DashboardPage() {
                           </PieChart>
                         </ResponsiveContainer>
                       ) : (
-                        <div className="text-sm text-slate-400">No data available</div>
+                        <div className="text-sm text-slate-400">데이터가 없습니다</div>
                       )}
                     </div>
                     {/* Legend */}
@@ -396,7 +396,7 @@ export default function DashboardPage() {
               <SlideUp delay={0.5}>
                 <Card className="bg-slate-900 text-white border-none">
                   <CardHeader className="border-slate-800">
-                    <CardTitle className="text-white">Monthly Revenue</CardTitle>
+                    <CardTitle className="text-white">월별 매출</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[150px] mt-2">
@@ -412,7 +412,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-slate-400">Total this month</p>
+                        <p className="text-xs text-slate-400">이번 달 매출</p>
                         <p className="text-xl font-bold mt-1">
                           {formatValue(stats?.summary.totalRevenue || 0, 'currency')}
                         </p>
@@ -432,13 +432,13 @@ export default function DashboardPage() {
             <SlideUp delay={0.6}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Records</CardTitle>
+                  <CardTitle>최근 진료 기록</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <div className="py-8 text-center text-slate-400">Loading...</div>
+                    <div className="py-8 text-center text-slate-400">로딩 중...</div>
                   ) : !stats?.recentRecords?.length ? (
-                    <div className="py-12 text-center text-slate-500 text-sm">No recent records found.</div>
+                    <div className="py-12 text-center text-slate-500 text-sm">최근 진료 기록이 없습니다.</div>
                   ) : (
                     <div className="space-y-4">
                       {stats.recentRecords.map((record) => (
@@ -467,15 +467,15 @@ export default function DashboardPage() {
             <SlideUp delay={0.7}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
+                  <CardTitle>빠른 실행</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                      { title: 'New Animal', icon: PawPrint, href: '/dashboard/animals/new', color: 'text-blue-600', bg: 'bg-blue-50 hover:bg-blue-100' },
-                      { title: 'New Appointment', icon: Calendar, href: '/dashboard/appointments/new', color: 'text-green-600', bg: 'bg-green-50 hover:bg-green-100' },
-                      { title: 'Medical Record', icon: FileText, href: '/dashboard/medical-records/new', color: 'text-purple-600', bg: 'bg-purple-50 hover:bg-purple-100' },
-                      { title: 'Billing', icon: DollarSign, href: '/dashboard/billing', color: 'text-orange-600', bg: 'bg-orange-50 hover:bg-orange-100' },
+                      { title: '동물 등록', icon: PawPrint, href: '/dashboard/animals/new', color: 'text-blue-600', bg: 'bg-blue-50 hover:bg-blue-100' },
+                      { title: '예약 등록', icon: Calendar, href: '/dashboard/appointments/new', color: 'text-green-600', bg: 'bg-green-50 hover:bg-green-100' },
+                      { title: '진료 기록', icon: FileText, href: '/dashboard/medical-records/new', color: 'text-purple-600', bg: 'bg-purple-50 hover:bg-purple-100' },
+                      { title: '수납/청구', icon: DollarSign, href: '/dashboard/billing', color: 'text-orange-600', bg: 'bg-orange-50 hover:bg-orange-100' },
                     ].map((action) => (
                       <Link
                         key={action.title}

@@ -16,49 +16,44 @@ import {
   Bell,
   Search,
   ChevronDown,
-  ChevronRight,
-  Plus,
-  Command,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
-import { useState } from 'react';
 
 interface NavItem {
   name: string;
   href: string;
   icon: any;
-  subItems?: { name: string; href: string }[];
 }
 
 const navGroups: { title?: string; items: NavItem[] }[] = [
   {
     items: [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
     ]
   },
   {
-    title: 'Clinical',
+    title: '진료',
     items: [
-      { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
-      { name: 'Medical Records', href: '/dashboard/medical-records', icon: FileText },
-      { name: 'Animals', href: '/dashboard/animals', icon: PawPrint },
+      { name: '예약 관리', href: '/dashboard/appointments', icon: Calendar },
+      { name: '진료 기록', href: '/dashboard/medical-records', icon: FileText },
+      { name: '동물 관리', href: '/dashboard/animals', icon: PawPrint },
     ],
   },
   {
-    title: 'Management',
+    title: '경영',
     items: [
-      { name: 'Hospitals', href: '/dashboard/hospitals', icon: Building2 },
-      { name: 'Users', href: '/dashboard/users', icon: Users },
-      { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
-      { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
+      { name: '병원 관리', href: '/dashboard/hospitals', icon: Building2 },
+      { name: '직원 관리', href: '/dashboard/users', icon: Users },
+      { name: '재고 관리', href: '/dashboard/inventory', icon: Package },
+      { name: '수납/청구', href: '/dashboard/billing', icon: CreditCard },
     ],
   },
   {
-    title: 'System',
+    title: '시스템',
     items: [
-      { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
-      { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+      { name: '알림', href: '/dashboard/notifications', icon: Bell },
+      { name: '설정', href: '/dashboard/settings', icon: Settings },
     ],
   },
 ];
@@ -69,7 +64,7 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-full w-[240px] flex-col bg-slate-50 border-r border-slate-200 text-slate-600 font-sans">
-      {/* Workspace Switcher / Header */}
+      {/* Header */}
       <div className="h-14 flex items-center px-4 border-b border-slate-100 hover:bg-slate-100 cursor-pointer transition-colors group">
         <div className="h-6 w-6 rounded bg-slate-900 text-white flex items-center justify-center text-xs font-bold mr-3">
           P
@@ -82,7 +77,7 @@ export function Sidebar() {
       <div className="px-3 py-3">
         <button className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-slate-500 rounded-md border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-sm">
           <Search className="h-4 w-4" />
-          <span>Quick actions</span>
+          <span>빠른 검색</span>
           <kbd className="ml-auto text-[10px] font-mono border border-slate-200 rounded px-1 bg-slate-50 text-slate-400">
             ⌘K
           </kbd>
@@ -133,12 +128,13 @@ export function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-slate-900 truncate">
-              {user?.name || 'User'}
+              {user?.name || '사용자'}
             </p>
             <p className="text-xs text-slate-500 truncate">
               {user?.email}
             </p>
           </div>
+          <LogOut className="h-4 w-4 text-slate-400" />
         </div>
       </div>
     </aside>

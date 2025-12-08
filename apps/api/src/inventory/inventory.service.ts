@@ -262,7 +262,7 @@ export class InventoryService {
     expiringSoon?: boolean;
   }) {
     const { productId, lowStock: lowStockOnly, expiringSoon: expiringOnly } = options || {};
-    let where: any = { hospitalId };
+    const where: any = { hospitalId };
     if (productId) where.productId = productId;
 
     const stocks = await this.prisma.inventoryStock.findMany({

@@ -321,7 +321,7 @@ export class NotificationsService {
 
   private async sendPushNotification(
     notification: { title: string; message: string },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     recipient: { name: string }
   ) {
     // TODO: FCM 푸시 알림 발송 구현

@@ -38,45 +38,57 @@ import {
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 
+// API 반환값에 맞춘 인터페이스
 interface DashboardStats {
   summary: {
     totalAnimals: number;
-    totalAppointments: number;
-    totalRevenue: number;
-    pendingPayments: number;
+    totalRecords: number;
+    todayAppointments: number;
+    weeklyAppointments: number;
   };
   appointments: {
-    today: number;
+    today: {
+      total: number;
+      confirmed: number;
+      completed: number;
+      cancelled: number;
+    };
     thisWeek: number;
-    pending: number;
-    confirmed: number;
-    completed: number;
-    cancelled: number;
+  };
+  revenue: {
+    thisMonth: number;
+    monthlyInvoices: number;
+    pendingAmount: number;
   };
   inventory: {
     lowStockCount: number;
     expiringSoonCount: number;
-    totalItems: number;
   };
   recentRecords: Array<{
     id: string;
-    visitDate: string;
+    animalName: string;
+    animalSpecies: string;
     chiefComplaint: string;
-    animal: { name: string };
+    visitDate: string;
+    createdAt: string;
   }>;
   todayAppointments: Array<{
     id: string;
-    scheduledTime: string;
+    animalName: string;
+    animalSpecies: string;
+    vetName: string;
+    startTime: string;
+    endTime: string;
+    type: string;
     status: string;
-    animal: { name: string };
-    owner: { name: string };
+    reason: string;
   }>;
 }
 
 interface WeeklyTrend {
   date: string;
   count: number;
-  dayName: string;
+  dayOfWeek: string;
 }
 
 interface MonthlyRevenue {
@@ -87,8 +99,8 @@ interface MonthlyRevenue {
 
 interface SpeciesDistribution {
   species: string;
+  name: string;
   count: number;
-  percentage: number;
   [key: string]: string | number;
 }
 
@@ -172,23 +184,23 @@ export default function DashboardPage() {
   const statCards = [
     {
       title: '등록 동물',
-      value: stats?.summary.totalAnimals || 0,
+      value: stats?.summary?.totalAnimals || 0,
       icon: PawPrint,
     },
     {
       title: '오늘 예약',
-      value: stats?.appointments.today || 0,
+      value: stats?.appointments?.today?.total || 0,
       icon: Calendar,
     },
     {
       title: '월 매출',
-      value: stats?.summary.totalRevenue || 0,
+      value: stats?.revenue?.thisMonth || 0,
       icon: DollarSign,
       format: 'currency',
     },
     {
       title: '미수금',
-      value: stats?.summary.pendingPayments || 0,
+      value: stats?.revenue?.pendingAmount || 0,
       icon: AlertTriangle,
       format: 'currency',
     },
@@ -270,7 +282,7 @@ export default function DashboardPage() {
                           <LineChart data={weeklyTrend}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                             <XAxis
-                              dataKey="dayName"
+                              dataKey="dayOfWeek"
                               axisLine={false}
                               tickLine={false}
                               tick={{ fill: '#64748b', fontSize: 12 }}
@@ -317,16 +329,16 @@ export default function DashboardPage() {
                           <div key={apt.id} className="group flex items-center justify-between p-3 hover:bg-slate-50 rounded-md transition-colors border border-transparent hover:border-slate-100">
                             <div className="flex items-center gap-4">
                               <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs ring-4 ring-white group-hover:ring-slate-50 transition-all">
-                                {apt.animal?.name?.[0] || 'A'}
+                                {apt.animalName?.[0] || 'A'}
                               </div>
                               <div>
-                                <p className="font-medium text-sm text-slate-900">{apt.animal?.name}</p>
-                                <p className="text-xs text-slate-500">{apt.owner?.name}</p>
+                                <p className="font-medium text-sm text-slate-900">{apt.animalName}</p>
+                                <p className="text-xs text-slate-500">{apt.vetName || '미배정'}</p>
                               </div>
                             </div>
                             <div className="text-right">
                               <p className="text-xs font-semibold text-slate-900">
-                                {new Date(apt.scheduledTime).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' })}
+                                {apt.startTime ? new Date(apt.startTime).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' }) : '-'}
                               </p>
                               <span className={
                                 `inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium mt-1 ${apt.status === 'CONFIRMED' ? 'bg-blue-50 text-blue-700' :
@@ -334,7 +346,7 @@ export default function DashboardPage() {
                                     'bg-slate-100 text-slate-600'
                                 }`
                               }>
-                                {apt.status}
+                                {apt.status === 'CONFIRMED' ? '확정' : apt.status === 'COMPLETED' ? '완료' : apt.status === 'PENDING' ? '대기' : apt.status}
                               </span>
                             </div>
                           </div>
@@ -414,7 +426,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="text-xs text-slate-400">이번 달 매출</p>
                         <p className="text-xl font-bold mt-1">
-                          {formatValue(stats?.summary.totalRevenue || 0, 'currency')}
+                          {formatValue(stats?.revenue?.thisMonth || 0, 'currency')}
                         </p>
                       </div>
                       <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
@@ -448,7 +460,7 @@ export default function DashboardPage() {
                               <FileText className="h-4 w-4" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-slate-900">{record.animal?.name}</p>
+                              <p className="text-sm font-medium text-slate-900">{record.animalName}</p>
                               <p className="text-xs text-slate-500 truncate max-w-[200px]">{record.chiefComplaint}</p>
                             </div>
                           </div>

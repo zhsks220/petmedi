@@ -6,7 +6,7 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # 루트 package.json과 pnpm 설정 복사
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 
 # 필요한 패키지들의 package.json 복사
 COPY apps/api/package.json ./apps/api/

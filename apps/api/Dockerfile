@@ -37,6 +37,9 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# pnpm 설치 (Railway에서 pnpm start 실행을 위해 필요)
+RUN npm install -g pnpm
+
 # 전체 빌드 결과물 복사 (node_modules 포함)
 COPY --from=builder /app ./
 

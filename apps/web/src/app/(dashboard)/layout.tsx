@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Sidebar } from '@/components/layout/sidebar';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 export default function DashboardLayout({
   children,
@@ -22,8 +21,8 @@ export default function DashboardLayout({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
       </div>
     );
   }
@@ -33,16 +32,12 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* 상단 헤더 */}
-        <header className="h-14 border-b bg-white flex items-center justify-end px-6">
-          <NotificationCenter />
-        </header>
-        {/* 메인 콘텐츠 */}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
-      </div>
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden h-full relative">
+        {/* Pages will render their own headers and content scroll areas */}
+        {children}
+      </main>
     </div>
   );
 }

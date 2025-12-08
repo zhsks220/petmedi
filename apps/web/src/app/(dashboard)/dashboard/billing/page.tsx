@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Search,
@@ -14,10 +15,11 @@ import {
   DollarSign,
   Clock,
   CheckCircle,
-  XCircle,
+  MoreHorizontal,
+  Receipt
 } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/components/ui';
+import { PageHeader } from '@/components/layout/page-header';
+import { Button, Input, Card, CardContent, Badge, NativeSelect, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
 import { invoicesApi } from '@/lib/api';
 import { AxiosError } from 'axios';
 import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
@@ -70,13 +72,13 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-800',
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  PARTIAL: 'bg-blue-100 text-blue-800',
-  PAID: 'bg-green-100 text-green-800',
-  OVERDUE: 'bg-red-100 text-red-800',
-  CANCELLED: 'bg-gray-100 text-gray-600',
-  REFUNDED: 'bg-purple-100 text-purple-800',
+  DRAFT: 'bg-slate-100 text-slate-700 border-slate-200',
+  PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+  PARTIAL: 'bg-blue-50 text-blue-700 border-blue-200',
+  PAID: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  OVERDUE: 'bg-red-50 text-red-700 border-red-200',
+  CANCELLED: 'bg-slate-100 text-slate-500 border-slate-200',
+  REFUNDED: 'bg-purple-50 text-purple-700 border-purple-200',
 };
 
 const formatCurrency = (amount: number) => {
@@ -95,6 +97,7 @@ const formatDate = (dateString: string) => {
 };
 
 export default function BillingPage() {
+  const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -152,282 +155,288 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="수납 관리" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="수납 관리"
+        description="진료비 청구 및 수납 내역을 관리합니다"
+        icon={Receipt}
+      >
+        <Link href="/dashboard/billing/new">
+          <Button size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            청구서 작성
+          </Button>
+        </Link>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6 space-y-6">
-        {/* Summary Cards */}
-        <SlideUp className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">전체 청구서</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">미수납</p>
-                  <p className="text-2xl font-bold">{stats.pending}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">부분수납</p>
-                  <p className="text-2xl font-bold">{stats.partial}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">수납완료</p>
-                  <p className="text-2xl font-bold">{stats.paid}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">미수금 합계</p>
-                  <p className="text-xl font-bold text-red-600">{formatCurrency(stats.totalDue)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </SlideUp>
-
-        {/* Actions Bar */}
-        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="flex flex-1 gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="청구서 번호, 환자명, 보호자명으로 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <NativeSelect
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-40"
-            >
-              <option value="">모든 상태</option>
-              <option value="DRAFT">임시저장</option>
-              <option value="PENDING">미수납</option>
-              <option value="PARTIAL">부분수납</option>
-              <option value="PAID">수납완료</option>
-              <option value="OVERDUE">연체</option>
-              <option value="CANCELLED">취소</option>
-              <option value="REFUNDED">환불</option>
-            </NativeSelect>
-          </div>
-          <Link href="/dashboard/billing/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              청구서 작성
-            </Button>
-          </Link>
-        </FadeIn>
-
-        {/* Error State */}
-        {error && (
-          <FadeIn>
-            <Card className="border-destructive bg-destructive/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <div>
-                      <p className="font-medium text-destructive">오류 발생</p>
-                      <p className="text-sm text-muted-foreground">{error}</p>
-                    </div>
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-7xl mx-auto space-y-6">
+          {/* Summary Cards */}
+          <SlideUp className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <FileText className="h-5 w-5 text-blue-600" />
                   </div>
-                  <Button variant="outline" size="sm" onClick={fetchInvoices}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    다시 시도
-                  </Button>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">전체 청구서</p>
+                    <p className="text-xl font-bold text-slate-900">{stats.total}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </FadeIn>
-        )}
 
-        {/* Invoices List */}
-        {!error && isLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-20 bg-gray-100 rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : !error && filteredInvoices.length === 0 ? (
-          <FadeIn className="text-center py-12">
-            <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              청구서가 없습니다
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              아직 등록된 청구서가 없습니다.
-            </p>
-            <Link href="/dashboard/billing/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                청구서 작성하기
-              </Button>
-            </Link>
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-50 rounded-lg">
+                    <Clock className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">미수납</p>
+                    <p className="text-xl font-bold text-amber-600">{stats.pending}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <CreditCard className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">부분수납</p>
+                    <p className="text-xl font-bold text-blue-600">{stats.partial}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">수납완료</p>
+                    <p className="text-xl font-bold text-emerald-600">{stats.paid}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-50 rounded-lg">
+                    <DollarSign className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">미수금 합계</p>
+                    <p className="text-lg font-bold text-red-600 truncate" title={formatCurrency(stats.totalDue)}>
+                      {formatCurrency(stats.totalDue)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Actions Bar */}
+          <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex flex-1 gap-4 w-full sm:w-auto">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  type="search"
+                  placeholder="청구서 번호, 환자명, 보호자명 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                />
+              </div>
+              <NativeSelect
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-32 h-9"
+              >
+                <option value="">모든 상태</option>
+                <option value="DRAFT">임시저장</option>
+                <option value="PENDING">미수납</option>
+                <option value="PARTIAL">부분수납</option>
+                <option value="PAID">수납완료</option>
+                <option value="OVERDUE">연체</option>
+                <option value="CANCELLED">취소</option>
+                <option value="REFUNDED">환불</option>
+              </NativeSelect>
+            </div>
+            <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={fetchInvoices}>
+              <RefreshCw className={`h-4 w-4 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
           </FadeIn>
-        ) : !error ? (
-          <div className="space-y-4">
-            {filteredInvoices.map((invoice) => (
-              <SlideUp key={invoice.id}>
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        {/* Invoice Number */}
-                        <div className="min-w-[120px]">
-                          <div className="font-mono text-sm text-muted-foreground">
+
+          {/* Error State */}
+          {error && (
+            <FadeIn>
+              <div className="p-4 rounded-lg border border-red-100 bg-red-50 text-red-600 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>{error}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={fetchInvoices} className="text-red-600 hover:text-red-700 hover:bg-red-100">
+                  다시 시도
+                </Button>
+              </div>
+            </FadeIn>
+          )}
+
+          {/* Invoices Table */}
+          <SlideUp className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                  <TableHead className="w-[180px]">청구 정보</TableHead>
+                  <TableHead>환자 / 보호자</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead className="text-right">청구 금액</TableHead>
+                  <TableHead className="text-right">미수금</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-10 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-10 w-48 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-6 w-16 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-6 w-24 bg-slate-100 rounded animate-pulse ml-auto" /></TableCell>
+                      <TableCell><div className="h-6 w-24 bg-slate-100 rounded animate-pulse ml-auto" /></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-slate-100 rounded animate-pulse" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredInvoices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-64 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <Receipt className="h-8 w-8 mb-2 text-slate-300" />
+                        <p>청구서가 없습니다</p>
+                        <p className="text-xs text-slate-400 mt-1">검색 조건에 맞는 청구서를 찾을 수 없습니다</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredInvoices.map((invoice) => (
+                    <TableRow
+                      key={invoice.id}
+                      className="cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => router.push(`/dashboard/billing/${invoice.id}`)}
+                    >
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-slate-900 font-mono">
                             {invoice.invoiceNumber}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
+                          </span>
+                          <span className="text-xs text-slate-500">
                             {formatDate(invoice.createdAt)}
-                          </div>
+                          </span>
                         </div>
-
-                        {/* Divider */}
-                        <div className="h-12 w-px bg-gray-200" />
-
-                        {/* Patient Info */}
-                        <div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{invoice.animal.name}</h3>
-                            <Badge variant="secondary">{invoice.animal.species}</Badge>
+                            <span className="font-medium text-slate-900">{invoice.animal.name}</span>
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 font-normal text-slate-500">
+                              {invoice.animal.species}
+                            </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {invoice.animal.animalCode} · 보호자: {invoice.guardian.name}
-                          </p>
+                          <span className="text-xs text-slate-500">
+                            보호자: {invoice.guardian.name}
+                          </span>
                         </div>
-
-                        {/* Divider */}
-                        <div className="h-12 w-px bg-gray-200" />
-
-                        {/* Amount Info */}
-                        <div className="min-w-[200px]">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">총 금액</span>
-                            <span className="font-medium">{formatCurrency(invoice.finalAmount)}</span>
-                          </div>
-                          {invoice.paidAmount > 0 && (
-                            <div className="flex items-center justify-between text-green-600">
-                              <span className="text-sm">수납액</span>
-                              <span className="text-sm">{formatCurrency(invoice.paidAmount)}</span>
-                            </div>
-                          )}
-                          {invoice.dueAmount > 0 && (
-                            <div className="flex items-center justify-between text-red-600">
-                              <span className="text-sm">미수금</span>
-                              <span className="text-sm font-medium">{formatCurrency(invoice.dueAmount)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Status & Actions */}
-                      <div className="flex items-center gap-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[invoice.status]}`}
-                        >
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`font-medium border ${statusColors[invoice.status]}`}>
                           {statusLabels[invoice.status] || invoice.status}
-                        </span>
-
-                        {/* Quick Actions */}
-                        {['PENDING', 'PARTIAL'].includes(invoice.status) && (
-                          <Link href={`/dashboard/billing/${invoice.id}/payment`}>
-                            <Button size="sm">
-                              <CreditCard className="h-4 w-4 mr-1" />
-                              수납
-                            </Button>
-                          </Link>
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="font-medium text-slate-900">{formatCurrency(invoice.finalAmount)}</span>
+                          {invoice.paidAmount > 0 && (
+                            <span className="text-xs text-emerald-600">완납: {formatCurrency(invoice.paidAmount)}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {invoice.dueAmount > 0 ? (
+                          <span className="font-medium text-red-600">{formatCurrency(invoice.dueAmount)}</span>
+                        ) : (
+                          <span className="text-xs text-slate-400">-</span>
                         )}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/billing/${invoice.id}`)}>
+                              상세 보기
+                            </DropdownMenuItem>
+                            {['PENDING', 'PARTIAL'].includes(invoice.status) && (
+                              <DropdownMenuItem onClick={() => router.push(`/dashboard/billing/${invoice.id}/payment`)}>
+                                <CreditCard className="h-3.5 w-3.5 mr-2" />
+                                수납 처리
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem>
+                              영수증 인쇄
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </SlideUp>
 
-                        <Link href={`/dashboard/billing/${invoice.id}`}>
-                          <Button variant="outline" size="sm">
-                            상세보기
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </SlideUp>
-            ))}
-          </div>
-        ) : null}
-
-        {/* Pagination */}
-        {!isLoading && !error && totalPages > 1 && (
-          <FadeIn className="flex items-center justify-center gap-2 mt-6">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </FadeIn>
-        )}
-      </StaggerContainer>
+          {/* Pagination */}
+          {!isLoading && !error && totalPages > 1 && (
+            <FadeIn className="flex items-center justify-center gap-2 mt-6 pb-6">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-slate-600 font-medium">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </FadeIn>
+          )}
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

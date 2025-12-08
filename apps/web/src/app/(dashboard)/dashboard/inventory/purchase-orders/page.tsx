@@ -14,10 +14,20 @@ import {
   XCircle,
   Clock,
   Package,
-  ArrowLeft,
+  MoreHorizontal,
+  FileText,
 } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/components/ui';
+import { PageHeader } from '@/components/layout/page-header';
+import {
+  Button,
+  Input,
+  Card,
+  CardContent,
+  Badge,
+  NativeSelect,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from '@/components/ui';
 import { inventoryApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AxiosError } from 'axios';
@@ -66,12 +76,12 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-800',
-  PENDING: 'bg-yellow-100 text-yellow-800',
+  DRAFT: 'bg-slate-100 text-slate-800',
+  PENDING: 'bg-amber-100 text-amber-800',
   APPROVED: 'bg-blue-100 text-blue-800',
-  ORDERED: 'bg-purple-100 text-purple-800',
+  ORDERED: 'bg-indigo-100 text-indigo-800',
   PARTIAL: 'bg-orange-100 text-orange-800',
-  RECEIVED: 'bg-green-100 text-green-800',
+  RECEIVED: 'bg-emerald-100 text-emerald-800',
   CANCELLED: 'bg-red-100 text-red-800',
 };
 
@@ -188,317 +198,306 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="발주 관리" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="발주 관리"
+        description="약품 및 소모품 발주 내역을 관리합니다"
+        icon={Truck}
+      >
+        <Link href="/dashboard/inventory/purchase-orders/new">
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
+            <Plus className="h-4 w-4 mr-2" />
+            새 발주
+          </Button>
+        </Link>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6 space-y-6">
-        {/* Back Link */}
-        <FadeIn>
-          <Link
-            href="/dashboard/inventory"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            재고 관리로 돌아가기
-          </Link>
-        </FadeIn>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <SlideUp delay={0.1}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Truck className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">전체 발주</p>
-                    <p className="text-2xl font-bold">{stats.total}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </SlideUp>
-
-          <SlideUp delay={0.2}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">승인 대기</p>
-                    <p className="text-2xl font-bold">{stats.pending}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </SlideUp>
-
-          <SlideUp delay={0.3}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Package className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">진행 중</p>
-                    <p className="text-2xl font-bold">{stats.ordered}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </SlideUp>
-
-          <SlideUp delay={0.4}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">입고 완료</p>
-                    <p className="text-2xl font-bold">{stats.received}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </SlideUp>
-
-          <SlideUp delay={0.5}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <Truck className="h-5 w-5 text-gray-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">총 발주 금액</p>
-                    <p className="text-lg font-bold">{formatCurrency(stats.totalAmount)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </SlideUp>
-        </div>
-
-        {/* Actions Bar */}
-        <FadeIn>
-          <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <div className="flex flex-1 gap-4 flex-wrap">
-              <div className="relative flex-1 min-w-[200px] max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  type="search"
-                  placeholder="발주번호, 공급업체로 검색..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <NativeSelect
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-32"
-              >
-                <option value="">모든 상태</option>
-                <option value="DRAFT">임시저장</option>
-                <option value="PENDING">승인대기</option>
-                <option value="APPROVED">승인됨</option>
-                <option value="ORDERED">주문완료</option>
-                <option value="PARTIAL">부분입고</option>
-                <option value="RECEIVED">입고완료</option>
-                <option value="CANCELLED">취소됨</option>
-              </NativeSelect>
-              <NativeSelect
-                value={supplierFilter}
-                onChange={(e) => setSupplierFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">모든 공급업체</option>
-                {suppliers.map((sup) => (
-                  <option key={sup.id} value={sup.id}>
-                    {sup.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <Link href="/dashboard/inventory/purchase-orders/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                발주 등록
-              </Button>
-            </Link>
-          </div>
-        </FadeIn>
-
-        {/* Error State */}
-        {error && (
-          <FadeIn>
-            <Card className="border-destructive bg-destructive/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-7xl mx-auto space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <SlideUp delay={0.1}>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Truck className="h-5 w-5 text-blue-600" />
+                    </div>
                     <div>
-                      <p className="font-medium text-destructive">오류 발생</p>
-                      <p className="text-sm text-muted-foreground">{error}</p>
+                      <p className="text-sm text-slate-500 font-medium">전체 발주</p>
+                      <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={fetchOrders}>
+                </CardContent>
+              </Card>
+            </SlideUp>
+
+            <SlideUp delay={0.2}>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-50 rounded-lg">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 font-medium">승인 대기</p>
+                      <p className="text-2xl font-bold text-slate-900">{stats.pending}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </SlideUp>
+
+            <SlideUp delay={0.3}>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-50 rounded-lg">
+                      <Package className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 font-medium">진행 중</p>
+                      <p className="text-2xl font-bold text-slate-900">{stats.ordered}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </SlideUp>
+
+            <SlideUp delay={0.4}>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 rounded-lg">
+                      <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 font-medium">입고 완료</p>
+                      <p className="text-2xl font-bold text-slate-900">{stats.received}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </SlideUp>
+
+            <SlideUp delay={0.5}>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 rounded-lg">
+                      <Truck className="h-5 w-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 font-medium">총 발주 금액</p>
+                      <p className="text-lg font-bold text-slate-900 truncate" title={formatCurrency(stats.totalAmount)}>
+                        {formatCurrency(stats.totalAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </SlideUp>
+          </div>
+
+          {/* Filters */}
+          <FadeIn>
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      type="search"
+                      placeholder="발주번호, 공급업체로 검색..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 bg-slate-50 border-slate-200"
+                    />
+                  </div>
+                  <NativeSelect
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full sm:w-40 bg-slate-50 border-slate-200"
+                  >
+                    <option value="">모든 상태</option>
+                    <option value="DRAFT">임시저장</option>
+                    <option value="PENDING">승인대기</option>
+                    <option value="APPROVED">승인됨</option>
+                    <option value="ORDERED">주문완료</option>
+                    <option value="PARTIAL">부분입고</option>
+                    <option value="RECEIVED">입고완료</option>
+                    <option value="CANCELLED">취소됨</option>
+                  </NativeSelect>
+                  <NativeSelect
+                    value={supplierFilter}
+                    onChange={(e) => setSupplierFilter(e.target.value)}
+                    className="w-full sm:w-48 bg-slate-50 border-slate-200"
+                  >
+                    <option value="">모든 공급업체</option>
+                    {suppliers.map((sup) => (
+                      <option key={sup.id} value={sup.id}>
+                        {sup.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </div>
+              </CardContent>
+            </Card>
+          </FadeIn>
+
+          {/* Orders Table */}
+          <SlideUp delay={0.2}>
+            <Card className="border-slate-200 shadow-sm overflow-hidden">
+              {error ? (
+                <div className="p-6 text-center">
+                  <div className="inline-flex p-3 bg-red-50 rounded-full mb-4">
+                    <AlertCircle className="h-6 w-6 text-red-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">오류 발생</h3>
+                  <p className="text-slate-500 mb-4">{error}</p>
+                  <Button variant="outline" onClick={fetchOrders}>
                     <RefreshCw className="h-4 w-4 mr-2" />
                     다시 시도
                   </Button>
                 </div>
-              </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                        <TableHead className="w-[180px]">발주번호</TableHead>
+                        <TableHead>공급업체</TableHead>
+                        <TableHead>주문일</TableHead>
+                        <TableHead>입고예정일</TableHead>
+                        <TableHead>품목 수</TableHead>
+                        <TableHead className="text-right">총 금액</TableHead>
+                        <TableHead className="text-center">상태</TableHead>
+                        <TableHead className="w-[80px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        [...Array(5)].map((_, i) => (
+                          <TableRow key={i}>
+                            <TableCell><div className="h-4 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                            <TableCell><div className="h-4 w-24 bg-slate-100 rounded animate-pulse" /></TableCell>
+                            <TableCell><div className="h-4 w-20 bg-slate-100 rounded animate-pulse" /></TableCell>
+                            <TableCell><div className="h-4 w-20 bg-slate-100 rounded animate-pulse" /></TableCell>
+                            <TableCell><div className="h-4 w-12 bg-slate-100 rounded animate-pulse" /></TableCell>
+                            <TableCell><div className="h-4 w-24 bg-slate-100 rounded animate-pulse" /></TableCell>
+                            <TableCell><div className="h-6 w-16 bg-slate-100 rounded-full animate-pulse mx-auto" /></TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        ))
+                      ) : filteredOrders.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-12 text-slate-500">
+                            <Truck className="h-10 w-10 mx-auto text-slate-300 mb-3" />
+                            <p className="text-lg font-medium text-slate-900">발주 내역이 없습니다</p>
+                            <p className="text-sm text-slate-500 mb-4">새로운 발주를 등록해보세요.</p>
+                            <Link href="/dashboard/inventory/purchase-orders/new">
+                              <Button variant="outline">
+                                <Plus className="h-4 w-4 mr-2" />
+                                발주 등록하기
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredOrders.map((order) => (
+                          <TableRow key={order.id} className="hover:bg-slate-50/50 group transition-colors">
+                            <TableCell className="font-medium font-mono text-slate-600">
+                              {order.orderNumber}
+                            </TableCell>
+                            <TableCell className="font-medium text-slate-900">
+                              {order.supplier.name}
+                            </TableCell>
+                            <TableCell className="text-slate-500">
+                              {formatDate(order.orderDate)}
+                            </TableCell>
+                            <TableCell className="text-slate-500">
+                              {order.expectedDeliveryDate ? formatDate(order.expectedDeliveryDate) : '-'}
+                            </TableCell>
+                            <TableCell className="text-slate-500">
+                              {order._count?.items || order.items?.length || 0}개
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-slate-900">
+                              {formatCurrency(order.totalAmount)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="secondary" className={`${statusColors[order.status]} border-0 font-normal`}>
+                                {statusLabels[order.status] || order.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <Link href={`/dashboard/inventory/purchase-orders/${order.id}`}>
+                                    <DropdownMenuItem>
+                                      <FileText className="h-4 w-4 mr-2" />
+                                      상세보기
+                                    </DropdownMenuItem>
+                                  </Link>
+                                  {order.status === 'PENDING' && (
+                                    <DropdownMenuItem onClick={() => handleApprove(order.id)} className="text-emerald-600 focus:text-emerald-700">
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      승인
+                                    </DropdownMenuItem>
+                                  )}
+                                  {['DRAFT', 'PENDING'].includes(order.status) && (
+                                    <DropdownMenuItem onClick={() => handleCancel(order.id)} className="text-red-600 focus:text-red-700">
+                                      <XCircle className="h-4 w-4 mr-2" />
+                                      취소
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </Card>
-          </FadeIn>
-        )}
+          </SlideUp>
 
-        {/* Orders List */}
-        {!error && isLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-20 bg-gray-100 rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : !error && filteredOrders.length === 0 ? (
-          <FadeIn>
-            <div className="text-center py-12">
-              <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">발주가 없습니다</h3>
-              <p className="text-muted-foreground mb-4">아직 등록된 발주가 없습니다.</p>
-              <Link href="/dashboard/inventory/purchase-orders/new">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  발주 등록하기
+          {/* Pagination */}
+          {!isLoading && !error && totalPages > 1 && (
+            <FadeIn>
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
-              </Link>
-            </div>
-          </FadeIn>
-        ) : !error ? (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <SlideUp key={order.id}>
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        {/* Order Number */}
-                        <div className="min-w-[140px]">
-                          <div className="font-mono font-medium">{order.orderNumber}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatDate(order.orderDate)}
-                          </div>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="h-12 w-px bg-gray-200" />
-
-                        {/* Supplier Info */}
-                        <div>
-                          <h3 className="font-semibold">{order.supplier.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {order._count?.items || order.items?.length || 0}개 품목
-                          </p>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="h-12 w-px bg-gray-200" />
-
-                        {/* Amount Info */}
-                        <div className="min-w-[150px]">
-                          <div className="font-semibold">{formatCurrency(order.totalAmount)}</div>
-                          {order.expectedDeliveryDate && (
-                            <div className="text-xs text-muted-foreground">
-                              예정: {formatDate(order.expectedDeliveryDate)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Status & Actions */}
-                      <div className="flex items-center gap-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[order.status]}`}
-                        >
-                          {statusLabels[order.status] || order.status}
-                        </span>
-
-                        {/* Quick Actions */}
-                        <div className="flex gap-2">
-                          {order.status === 'PENDING' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600"
-                              onClick={() => handleApprove(order.id)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              승인
-                            </Button>
-                          )}
-                          {['DRAFT', 'PENDING'].includes(order.status) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600"
-                              onClick={() => handleCancel(order.id)}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              취소
-                            </Button>
-                          )}
-                          <Link href={`/dashboard/inventory/purchase-orders/${order.id}`}>
-                            <Button variant="outline" size="sm">
-                              상세보기
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </SlideUp>
-            ))}
-          </div>
-        ) : null}
-
-        {/* Pagination */}
-        {!isLoading && !error && totalPages > 1 && (
-          <FadeIn>
-            <div className="flex items-center justify-center gap-2 mt-6">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {currentPage} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </FadeIn>
-        )}
-      </StaggerContainer>
+                <div className="text-sm text-slate-500 font-medium px-2">
+                  {currentPage} / {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </FadeIn>
+          )}
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

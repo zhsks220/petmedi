@@ -12,10 +12,25 @@ import {
   AlertTriangle,
   Plus,
   Minus,
+  Tag,
+  Building2,
+  DollarSign,
+  Box,
+  Scale
 } from 'lucide-react';
 import Link from 'next/link';
-import { Header } from '@/components/layout/header';
-import { Button, Input, Card, CardContent, NativeSelect, Textarea, Badge } from '@/components/ui';
+import { PageHeader } from '@/components/layout/page-header';
+import {
+  Button,
+  Input,
+  Card,
+  CardContent,
+  NativeSelect,
+  Textarea,
+  Badge,
+  Label,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from '@/components/ui';
 import { inventoryApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AxiosError } from 'axios';
@@ -301,12 +316,12 @@ export default function ProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full">
-        <Header title="제품 상세" />
+      <div className="flex flex-col h-full bg-slate-50">
+        <PageHeader title="제품 상세" />
         <div className="flex-1 p-6">
-          <Card className="animate-pulse">
+          <Card className="animate-pulse border-slate-200">
             <CardContent className="p-6">
-              <div className="h-64 bg-gray-100 rounded" />
+              <div className="h-64 bg-slate-100 rounded" />
             </CardContent>
           </Card>
         </div>
@@ -316,17 +331,17 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="flex flex-col h-full">
-        <Header title="제품 상세" />
+      <div className="flex flex-col h-full bg-slate-50">
+        <PageHeader title="제품 상세" />
         <div className="flex-1 p-6">
           <FadeIn>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
-                <h2 className="text-lg font-semibold mb-2">제품을 찾을 수 없습니다</h2>
-                <p className="text-muted-foreground mb-4">{error}</p>
+            <Card className="border-slate-200">
+              <CardContent className="p-12 text-center">
+                <AlertTriangle className="h-12 w-12 mx-auto text-amber-500 mb-4" />
+                <h2 className="text-lg font-semibold text-slate-900 mb-2">제품을 찾을 수 없습니다</h2>
+                <p className="text-slate-500 mb-6">{error || '요청하신 제품 정보가 존재하지 않습니다.'}</p>
                 <Link href="/dashboard/inventory">
-                  <Button>목록으로 돌아가기</Button>
+                  <Button variant="outline">목록으로 돌아가기</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -339,31 +354,60 @@ export default function ProductDetailPage() {
   const totalStock = getTotalStock();
   const stockStatus =
     totalStock === 0
-      ? { label: '재고없음', color: 'bg-red-100 text-red-800' }
+      ? { label: '재고없음', color: 'bg-red-100 text-red-700' }
       : totalStock <= product.reorderPoint
-        ? { label: '부족', color: 'bg-yellow-100 text-yellow-800' }
-        : { label: '정상', color: 'bg-green-100 text-green-800' };
+        ? { label: '부족', color: 'bg-amber-100 text-amber-700' }
+        : { label: '정상', color: 'bg-emerald-100 text-emerald-700' };
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="제품 상세" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title={product.name}
+        description={product.barcode ? `바코드: ${product.barcode}` : '제품 상세 정보'}
+        icon={Package}
+      >
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/inventory">
+            <Button variant="outline" className="bg-white">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              목록으로
+            </Button>
+          </Link>
+          {!isEditing ? (
+            <>
+              <Button onClick={() => setIsEditing(true)}>
+                <Edit2 className="h-4 w-4 mr-2" />
+                수정
+              </Button>
+              <Button
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                삭제
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setIsEditing(false)}>
+                취소
+              </Button>
+              <Button onClick={(e) => handleSubmit(e as any)} disabled={isSubmitting}>
+                <Save className="h-4 w-4 mr-2" />
+                저장
+              </Button>
+            </>
+          )}
+        </div>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Back Button */}
-          <FadeIn>
-            <Link
-              href="/dashboard/inventory"
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              재고 목록으로 돌아가기
-            </Link>
-          </FadeIn>
-
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-7xl mx-auto space-y-6">
           {error && (
             <FadeIn>
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
                 {error}
               </div>
             </FadeIn>
@@ -371,56 +415,13 @@ export default function ProductDetailPage() {
 
           {/* Product Info Card */}
           <SlideUp>
-            <Card>
+            <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <Package className="h-8 w-8 text-gray-500" />
-                    </div>
-                    <div>
-                      <h1 className="text-2xl font-bold">{product.name}</h1>
-                      <p className="text-muted-foreground">
-                        {product.barcode && `바코드: ${product.barcode}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {!isEditing ? (
-                      <>
-                        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                          <Edit2 className="h-4 w-4 mr-1" />
-                          수정
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={handleDelete}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          삭제
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                          취소
-                        </Button>
-                        <Button size="sm" onClick={handleSubmit} disabled={isSubmitting}>
-                          <Save className="h-4 w-4 mr-1" />
-                          저장
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
                 {isEditing ? (
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">제품명 *</label>
+                        <Label>제품명 <span className="text-red-500">*</span></Label>
                         <Input
                           name="name"
                           value={formData.name}
@@ -429,7 +430,7 @@ export default function ProductDetailPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">바코드</label>
+                        <Label>바코드</Label>
                         <Input
                           name="barcode"
                           value={formData.barcode}
@@ -437,7 +438,7 @@ export default function ProductDetailPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">단위 *</label>
+                        <Label>단위 <span className="text-red-500">*</span></Label>
                         <Input
                           name="unit"
                           value={formData.unit}
@@ -446,7 +447,7 @@ export default function ProductDetailPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">제품 유형</label>
+                        <Label>제품 유형</Label>
                         <NativeSelect name="type" value={formData.type} onChange={handleChange}>
                           <option value="MEDICATION">약품</option>
                           <option value="VACCINE">백신</option>
@@ -457,7 +458,7 @@ export default function ProductDetailPage() {
                         </NativeSelect>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">카테고리</label>
+                        <Label>카테고리</Label>
                         <NativeSelect
                           name="categoryId"
                           value={formData.categoryId}
@@ -472,7 +473,22 @@ export default function ProductDetailPage() {
                         </NativeSelect>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">원가</label>
+                        <Label>공급업체</Label>
+                        <NativeSelect
+                          name="supplierId"
+                          value={formData.supplierId}
+                          onChange={handleChange}
+                        >
+                          <option value="">선택 안함</option>
+                          {suppliers.map((sup) => (
+                            <option key={sup.id} value={sup.id}>
+                              {sup.name}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>원가</Label>
                         <Input
                           type="number"
                           name="costPrice"
@@ -482,7 +498,7 @@ export default function ProductDetailPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">판매가 *</label>
+                        <Label>판매가 <span className="text-red-500">*</span></Label>
                         <Input
                           type="number"
                           name="sellingPrice"
@@ -493,7 +509,7 @@ export default function ProductDetailPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">재주문 기준</label>
+                        <Label>재주문 기준 (Reorder Point)</Label>
                         <Input
                           type="number"
                           name="reorderPoint"
@@ -503,7 +519,7 @@ export default function ProductDetailPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">기본 주문 수량</label>
+                        <Label>기본 주문 수량</Label>
                         <Input
                           type="number"
                           name="reorderQuantity"
@@ -514,47 +530,82 @@ export default function ProductDetailPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">설명</label>
+                      <Label>설명</Label>
                       <Textarea
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         rows={3}
+                        className="resize-none"
                       />
                     </div>
                   </form>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">유형</h3>
-                      <Badge variant="secondary">
-                        {productTypeLabels[product.type] || product.type}
-                      </Badge>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-slate-100 rounded-md">
+                        <Tag className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 mb-1">유형</p>
+                        <Badge variant="secondary" className="font-normal text-slate-700 bg-slate-100 hover:bg-slate-200">
+                          {productTypeLabels[product.type] || product.type}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">카테고리</h3>
-                      <p>{product.category?.name || '-'}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-slate-100 rounded-md">
+                        <Box className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 mb-1">카테고리</p>
+                        <p className="text-slate-900 font-medium">{product.category?.name || '-'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">공급업체</h3>
-                      <p>{product.supplier?.name || '-'}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-slate-100 rounded-md">
+                        <Building2 className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 mb-1">공급업체</p>
+                        <p className="text-slate-900 font-medium">{product.supplier?.name || '-'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">원가</h3>
-                      <p>{product.costPrice ? formatCurrency(product.costPrice) : '-'}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-slate-100 rounded-md">
+                        <Scale className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 mb-1">단위</p>
+                        <p className="text-slate-900 font-medium">{product.unit}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">판매가</h3>
-                      <p className="font-semibold">{formatCurrency(product.sellingPrice)}</p>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-slate-100 rounded-md">
+                        <DollarSign className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 mb-1">원가</p>
+                        <p className="text-slate-900 font-medium">{product.costPrice ? formatCurrency(product.costPrice) : '-'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">단위</h3>
-                      <p>{product.unit}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-slate-100 rounded-md">
+                        <DollarSign className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 mb-1">판매가</p>
+                        <p className="text-lg font-bold text-slate-900">{formatCurrency(product.sellingPrice)}</p>
+                      </div>
                     </div>
+
                     {product.description && (
-                      <div className="col-span-3">
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">설명</h3>
-                        <p className="text-sm">{product.description}</p>
+                      <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-2">
+                        <p className="text-sm font-medium text-slate-500 mb-2">설명</p>
+                        <div className="bg-slate-50 p-3 rounded-md text-sm text-slate-700">
+                          {product.description}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -564,37 +615,49 @@ export default function ProductDetailPage() {
           </SlideUp>
 
           {/* Stock Status Card */}
-          <SlideUp>
-            <Card>
+          <SlideUp delay={0.1}>
+            <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">재고 현황</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-indigo-600" />
+                    <h2 className="text-lg font-semibold text-slate-900">재고 현황</h2>
+                  </div>
                   <Button onClick={() => setShowAdjustModal(true)}>
                     재고 조정
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">현재 재고</p>
-                    <p className="text-3xl font-bold">
-                      {totalStock} <span className="text-lg font-normal">{product.unit}</span>
-                    </p>
-                    <span className={`inline-flex mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${stockStatus.color}`}>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <p className="text-sm text-slate-500 font-medium">현재 재고</p>
+                    <div className="flex items-end gap-2 mt-1">
+                      <p className="text-3xl font-bold text-slate-900">
+                        {totalStock}
+                      </p>
+                      <span className="text-lg text-slate-600 mb-1">{product.unit}</span>
+                    </div>
+                    <span className={`inline-flex mt-3 px-2 py-0.5 rounded-full text-xs font-medium border ${stockStatus.color.replace('text-', 'border-').replace('bg-', 'bg-opacity-20 ')}`}>
                       {stockStatus.label}
                     </span>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">재주문 기준</p>
-                    <p className="text-2xl font-semibold">{product.reorderPoint} {product.unit}</p>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <p className="text-sm text-slate-500 font-medium">재주문 기준</p>
+                    <div className="flex items-end gap-2 mt-1">
+                      <p className="text-2xl font-semibold text-slate-900">{product.reorderPoint}</p>
+                      <span className="text-base text-slate-600 mb-1">{product.unit}</span>
+                    </div>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">기본 주문 수량</p>
-                    <p className="text-2xl font-semibold">{product.reorderQuantity} {product.unit}</p>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <p className="text-sm text-slate-500 font-medium">기본 주문 수량</p>
+                    <div className="flex items-end gap-2 mt-1">
+                      <p className="text-2xl font-semibold text-slate-900">{product.reorderQuantity}</p>
+                      <span className="text-base text-slate-600 mb-1">{product.unit}</span>
+                    </div>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">재고 가치</p>
-                    <p className="text-2xl font-semibold">
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <p className="text-sm text-slate-500 font-medium">재고 가치</p>
+                    <p className="text-2xl font-semibold text-slate-900 mt-1">
                       {formatCurrency(totalStock * (product.costPrice || product.sellingPrice))}
                     </p>
                   </div>
@@ -602,29 +665,25 @@ export default function ProductDetailPage() {
 
                 {/* Stock Lots */}
                 {product.stocks && product.stocks.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="text-sm font-medium mb-3">재고 로트</h3>
-                    <div className="space-y-2">
-                      {product.stocks.map((stock) => (
-                        <div
-                          key={stock.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div>
-                            <span className="font-medium">{stock.quantity} {product.unit}</span>
-                            {stock.lotNumber && (
-                              <span className="text-sm text-muted-foreground ml-2">
-                                (로트: {stock.lotNumber})
-                              </span>
-                            )}
+                  <div className="mt-8">
+                    <h3 className="text-sm font-medium text-slate-900 mb-3">재고 로트 상세</h3>
+                    <div className="border rounded-md overflow-hidden">
+                      <div className="grid grid-cols-3 bg-slate-50/50 p-3 text-sm font-medium text-slate-500 border-b">
+                        <div>수량</div>
+                        <div>로트(Lot) 번호</div>
+                        <div className="text-right">유통기한</div>
+                      </div>
+                      <div className="divide-y">
+                        {product.stocks.map((stock) => (
+                          <div key={stock.id} className="grid grid-cols-3 p-3 text-sm hover:bg-slate-50/50">
+                            <div className="font-medium text-slate-900">{stock.quantity} {product.unit}</div>
+                            <div className="text-slate-600">{stock.lotNumber || '-'}</div>
+                            <div className="text-right text-slate-600">
+                              {stock.expirationDate ? formatDate(stock.expirationDate) : '-'}
+                            </div>
                           </div>
-                          {stock.expirationDate && (
-                            <span className="text-sm text-muted-foreground">
-                              유통기한: {formatDate(stock.expirationDate)}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -633,43 +692,44 @@ export default function ProductDetailPage() {
           </SlideUp>
 
           {/* Recent Transactions */}
-          <SlideUp>
-            <Card>
+          <SlideUp delay={0.2}>
+            <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <History className="h-5 w-5 text-muted-foreground" />
-                  <h2 className="text-lg font-semibold">최근 재고 변동</h2>
+                <div className="flex items-center gap-2 mb-6">
+                  <History className="h-5 w-5 text-slate-500" />
+                  <h2 className="text-lg font-semibold text-slate-900">최근 재고 변동</h2>
                 </div>
 
                 {transactions.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    재고 변동 기록이 없습니다.
-                  </p>
+                  <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+                    <History className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                    <p className="text-slate-500 font-medium">재고 변동 기록이 없습니다.</p>
+                  </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-0 divide-y border rounded-lg overflow-hidden">
                     {transactions.map((tx) => (
                       <div
                         key={tx.id}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                        className="flex items-center justify-between p-4 bg-white hover:bg-slate-50/50 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           <div
-                            className={`p-2 rounded-full ${['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
-                                ? 'bg-green-100'
-                                : 'bg-red-100'
+                            className={`p-2 rounded-lg ${['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
+                              ? 'bg-emerald-50'
+                              : 'bg-red-50'
                               }`}
                           >
                             {['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type) ? (
-                              <Plus className="h-4 w-4 text-green-600" />
+                              <Plus className="h-4 w-4 text-emerald-600" />
                             ) : (
                               <Minus className="h-4 w-4 text-red-600" />
                             )}
                           </div>
                           <div>
-                            <p className="font-medium">
+                            <p className="font-medium text-slate-900">
                               {transactionTypeLabels[tx.type] || tx.type}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs text-slate-500 mt-0.5">
                               {formatDateTime(tx.createdAt)}
                               {tx.createdBy && ` · ${tx.createdBy.name}`}
                             </p>
@@ -677,9 +737,9 @@ export default function ProductDetailPage() {
                         </div>
                         <div className="text-right">
                           <span
-                            className={`font-semibold ${['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
-                                ? 'text-green-600'
-                                : 'text-red-600'
+                            className={`font-bold ${['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
+                              ? 'text-emerald-600'
+                              : 'text-red-600'
                               }`}
                           >
                             {['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
@@ -688,7 +748,7 @@ export default function ProductDetailPage() {
                             {Math.abs(tx.quantity)} {product.unit}
                           </span>
                           {tx.notes && (
-                            <p className="text-xs text-muted-foreground">{tx.notes}</p>
+                            <p className="text-xs text-slate-400 mt-0.5 max-w-[200px] truncate ml-auto">{tx.notes}</p>
                           )}
                         </div>
                       </div>
@@ -698,88 +758,88 @@ export default function ProductDetailPage() {
               </CardContent>
             </Card>
           </SlideUp>
-        </div>
-      </StaggerContainer>
+        </StaggerContainer>
 
-      {/* Stock Adjust Modal */}
-      {showAdjustModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
-            <CardContent className="p-6">
-              <h2 className="text-lg font-semibold mb-4">재고 조정</h2>
+        {/* Stock Adjust Modal */}
+        <Dialog open={showAdjustModal} onOpenChange={setShowAdjustModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>재고 조정</DialogTitle>
+              <DialogDescription>
+                수동으로 재고 수량을 조정합니다.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
+                <Button
+                  type="button"
+                  variant={adjustType === 'add' ? 'white' : 'ghost'}
+                  className={`flex-1 rounded-md shadow-sm ${adjustType === 'add' ? 'bg-white text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                  onClick={() => setAdjustType('add')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  입고 (추가)
+                </Button>
+                <Button
+                  type="button"
+                  variant={adjustType === 'subtract' ? 'white' : 'ghost'}
+                  className={`flex-1 rounded-md shadow-sm ${adjustType === 'subtract' ? 'bg-white text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                  onClick={() => setAdjustType('subtract')}
+                >
+                  <Minus className="h-4 w-4 mr-2" />
+                  출고 (차감)
+                </Button>
+              </div>
 
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={adjustType === 'add' ? 'default' : 'outline'}
-                    className="flex-1"
-                    onClick={() => setAdjustType('add')}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    입고
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={adjustType === 'subtract' ? 'default' : 'outline'}
-                    className="flex-1"
-                    onClick={() => setAdjustType('subtract')}
-                  >
-                    <Minus className="h-4 w-4 mr-1" />
-                    출고
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">수량</label>
+              <div className="space-y-3">
+                <Label>수량</Label>
+                <div className="relative">
                   <Input
                     type="number"
                     value={adjustQuantity}
                     onChange={(e) => setAdjustQuantity(e.target.value)}
-                    placeholder="수량 입력"
+                    placeholder="0"
                     min="1"
+                    className="pl-4 pr-12 text-right font-mono text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    현재 재고: {totalStock} {product.unit} →{' '}
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                    {product.unit}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-500 text-right">
+                  예상 재고: <span className="font-medium text-slate-900">{totalStock}</span> →{' '}
+                  <span className={`font-bold ${adjustType === 'add' ? 'text-emerald-600' : 'text-red-600'}`}>
                     {adjustType === 'add'
                       ? totalStock + (parseInt(adjustQuantity) || 0)
-                      : Math.max(0, totalStock - (parseInt(adjustQuantity) || 0))}{' '}
-                    {product.unit}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">사유</label>
-                  <Textarea
-                    value={adjustReason}
-                    onChange={(e) => setAdjustReason(e.target.value)}
-                    placeholder="조정 사유를 입력하세요"
-                    rows={2}
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowAdjustModal(false)}
-                  >
-                    취소
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={handleAdjustStock}
-                    disabled={isSubmitting || !adjustQuantity}
-                  >
-                    {isSubmitting ? '처리 중...' : '조정하기'}
-                  </Button>
-                </div>
+                      : Math.max(0, totalStock - (parseInt(adjustQuantity) || 0))}
+                  </span>
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
+              <div className="space-y-3">
+                <Label>조정 사유</Label>
+                <Textarea
+                  value={adjustReason}
+                  onChange={(e) => setAdjustReason(e.target.value)}
+                  placeholder="예: 파손 폐기, 실사 조정 등"
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAdjustModal(false)}>취소</Button>
+              <Button
+                onClick={handleAdjustStock}
+                disabled={isSubmitting || !adjustQuantity}
+                className={adjustType === 'subtract' ? 'bg-red-600 hover:bg-red-700' : ''}
+              >
+                {isSubmitting ? '처리 중...' : '조정 내용 저장'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

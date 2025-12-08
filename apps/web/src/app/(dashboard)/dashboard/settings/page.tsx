@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Header } from '@/components/layout/header';
+import { PageHeader } from '@/components/layout/page-header';
+import { Settings } from 'lucide-react';
 import {
   Button,
   Input,
@@ -14,6 +15,7 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
+  Badge,
 } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import { usersApi } from '@/lib/api';
@@ -74,14 +76,18 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="설정" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="설정"
+        description="계정 정보를 수정하고 애플리케이션 설정을 관리합니다"
+        icon={Settings}
+      />
 
-      <StaggerContainer className="flex-1 p-6">
-        <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-2xl mx-auto space-y-6">
           {/* Profile Settings */}
           <SlideUp>
-            <Card>
+            <Card className="border-slate-200 shadow-sm">
               <CardHeader>
                 <CardTitle>프로필 설정</CardTitle>
                 <CardDescription>
@@ -91,13 +97,13 @@ export default function SettingsPage() {
               <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   {success && (
-                    <FadeIn className="p-3 text-sm text-green-600 bg-green-50 rounded-md">
+                    <FadeIn className="p-3 text-sm text-green-600 bg-green-50 rounded-md border border-green-200">
                       프로필이 성공적으로 수정되었습니다
                     </FadeIn>
                   )}
 
                   {error && (
-                    <FadeIn className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
+                    <FadeIn className="p-3 text-sm text-red-500 bg-red-50 rounded-md border border-red-200">
                       {error}
                     </FadeIn>
                   )}
@@ -109,9 +115,9 @@ export default function SettingsPage() {
                       type="email"
                       value={user?.email || ''}
                       disabled
-                      className="bg-gray-50"
+                      className="bg-slate-50 border-slate-200"
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                       이메일은 변경할 수 없습니다
                     </p>
                   </div>
@@ -122,6 +128,7 @@ export default function SettingsPage() {
                       id="name"
                       {...register('name')}
                       error={errors.name?.message}
+                      className="border-slate-200 focus-visible:ring-slate-400"
                     />
                   </div>
 
@@ -132,6 +139,7 @@ export default function SettingsPage() {
                       placeholder="010-1234-5678"
                       {...register('phone')}
                       error={errors.phone?.message}
+                      className="border-slate-200 focus-visible:ring-slate-400"
                     />
                   </div>
 
@@ -147,26 +155,26 @@ export default function SettingsPage() {
 
           {/* Account Info */}
           <SlideUp>
-            <Card>
+            <Card className="border-slate-200 shadow-sm">
               <CardHeader>
                 <CardTitle>계정 정보</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-muted-foreground">역할</span>
-                    <span className="font-medium">
+                  <div className="flex justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-500">역할</span>
+                    <Badge variant="secondary" className="font-medium">
                       {user?.role === 'SUPER_ADMIN' && '슈퍼관리자'}
                       {user?.role === 'HOSPITAL_ADMIN' && '병원관리자'}
                       {user?.role === 'VETERINARIAN' && '수의사'}
                       {user?.role === 'TECHNICIAN' && '테크니션'}
                       {user?.role === 'RECEPTIONIST' && '접수원'}
                       {user?.role === 'PET_OWNER' && '보호자'}
-                    </span>
+                    </Badge>
                   </div>
                   <div className="flex justify-between py-2">
-                    <span className="text-muted-foreground">사용자 ID</span>
-                    <span className="font-mono text-sm">{user?.id}</span>
+                    <span className="text-slate-500">사용자 ID</span>
+                    <span className="font-mono text-sm text-slate-700">{user?.id}</span>
                   </div>
                 </div>
               </CardContent>
@@ -175,7 +183,7 @@ export default function SettingsPage() {
 
           {/* Danger Zone */}
           <SlideUp>
-            <Card className="border-red-200">
+            <Card className="border-red-200 shadow-sm bg-red-50/10">
               <CardHeader>
                 <CardTitle className="text-red-600">위험 영역</CardTitle>
                 <CardDescription>
@@ -183,14 +191,14 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive" disabled>
+                <Button variant="destructive" disabled className="w-full sm:w-auto">
                   계정 삭제 (준비 중)
                 </Button>
               </CardContent>
             </Card>
           </SlideUp>
-        </div>
-      </StaggerContainer>
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

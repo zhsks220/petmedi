@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Search,
@@ -16,9 +17,11 @@ import {
   Clock,
   Truck,
   Filter,
+  MoreHorizontal,
+  PackageSearch
 } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/components/ui';
+import { PageHeader } from '@/components/layout/page-header';
+import { Button, Input, Card, CardContent, Badge, NativeSelect, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
 import { inventoryApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AxiosError } from 'axios';
@@ -79,12 +82,12 @@ const productTypeLabels: Record<string, string> = {
 };
 
 const productTypeColors: Record<string, string> = {
-  MEDICATION: 'bg-blue-100 text-blue-800',
-  SUPPLY: 'bg-gray-100 text-gray-800',
-  EQUIPMENT: 'bg-purple-100 text-purple-800',
-  VACCINE: 'bg-green-100 text-green-800',
-  FOOD: 'bg-yellow-100 text-yellow-800',
-  OTHER: 'bg-gray-100 text-gray-600',
+  MEDICATION: 'bg-blue-50 text-blue-700 border-blue-200',
+  SUPPLY: 'bg-slate-50 text-slate-700 border-slate-200',
+  EQUIPMENT: 'bg-purple-50 text-purple-700 border-purple-200',
+  VACCINE: 'bg-green-50 text-green-700 border-green-200',
+  FOOD: 'bg-amber-50 text-amber-700 border-amber-200',
+  OTHER: 'bg-gray-50 text-gray-700 border-gray-200',
 };
 
 const formatCurrency = (amount: number) => {
@@ -94,26 +97,19 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
 const getTotalStock = (product: Product): number => {
   return product.stocks?.reduce((sum, s) => sum + s.quantity, 0) || 0;
 };
 
 const getStockStatus = (product: Product) => {
   const totalStock = getTotalStock(product);
-  if (totalStock === 0) return { label: '재고없음', color: 'bg-red-100 text-red-800' };
-  if (totalStock <= product.reorderPoint) return { label: '부족', color: 'bg-yellow-100 text-yellow-800' };
-  return { label: '정상', color: 'bg-green-100 text-green-800' };
+  if (totalStock === 0) return { label: '재고없음', color: 'bg-red-50 text-red-700 border-red-200' };
+  if (totalStock <= product.reorderPoint) return { label: '부족', color: 'bg-amber-50 text-amber-700 border-amber-200' };
+  return { label: '정상', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 };
 
 export default function InventoryPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const hospitalId = user?.hospitalId || '';
 
@@ -184,354 +180,332 @@ export default function InventoryPage() {
     fetchStats();
   }, [fetchCategories, fetchStats]);
 
-  const filteredProducts = products.filter((product) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      product.name.toLowerCase().includes(term) ||
-      (product.barcode && product.barcode.toLowerCase().includes(term))
-    );
-  });
+  const filteredProducts = products; // Already filtered by API
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="재고 관리" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="재고 관리"
+        description="의약품, 소모품 등 병원 내 재고 현황을 관리합니다"
+        icon={Package}
+      >
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/inventory/purchase-orders">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Truck className="h-4 w-4" />
+              발주 관리
+            </Button>
+          </Link>
+          <Link href="/dashboard/inventory/products/new">
+            <Button size="sm" className="gap-2">
+              <Plus className="h-4 w-4" />
+              제품 등록
+            </Button>
+          </Link>
+        </div>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6 space-y-6">
-        {/* Summary Cards */}
-        <SlideUp className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Package className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">전체 제품</p>
-                  <p className="text-2xl font-bold">{stats?.totalProducts || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <TrendingDown className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">재고 부족</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats?.lowStockProducts || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">재고 없음</p>
-                  <p className="text-2xl font-bold text-red-600">{stats?.outOfStockProducts || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Clock className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">유통기한 임박</p>
-                  <p className="text-2xl font-bold text-orange-600">{stats?.expiringProducts || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Truck className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">대기 발주</p>
-                  <p className="text-2xl font-bold">{stats?.pendingOrders || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">재고 가치</p>
-                  <p className="text-lg font-bold text-green-600">
-                    {formatCurrency(stats?.totalStockValue || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </SlideUp>
-
-        {/* Actions Bar */}
-        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="flex flex-1 gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="제품명, 바코드로 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <NativeSelect
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-32"
-            >
-              <option value="">전체 유형</option>
-              <option value="MEDICATION">약품</option>
-              <option value="SUPPLY">소모품</option>
-              <option value="EQUIPMENT">장비</option>
-              <option value="VACCINE">백신</option>
-              <option value="FOOD">사료</option>
-              <option value="OTHER">기타</option>
-            </NativeSelect>
-            <NativeSelect
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-32"
-            >
-              <option value="">전체 카테고리</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </NativeSelect>
-            <NativeSelect
-              value={stockFilter}
-              onChange={(e) => setStockFilter(e.target.value)}
-              className="w-32"
-            >
-              <option value="">재고 상태</option>
-              <option value="low">부족 재고</option>
-            </NativeSelect>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/dashboard/inventory/purchase-orders">
-              <Button variant="outline">
-                <Truck className="h-4 w-4 mr-2" />
-                발주 관리
-              </Button>
-            </Link>
-            <Link href="/dashboard/inventory/products/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                제품 등록
-              </Button>
-            </Link>
-          </div>
-        </FadeIn>
-
-        {/* Error State */}
-        {error && (
-          <FadeIn>
-            <Card className="border-destructive bg-destructive/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <div>
-                      <p className="font-medium text-destructive">오류 발생</p>
-                      <p className="text-sm text-muted-foreground">{error}</p>
-                    </div>
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-7xl mx-auto space-y-6">
+          {/* Summary Cards */}
+          <SlideUp className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <PackageSearch className="h-5 w-5 text-blue-600" />
                   </div>
-                  <Button variant="outline" size="sm" onClick={fetchProducts}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    다시 시도
-                  </Button>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">전체 제품</p>
+                    <p className="text-xl font-bold text-slate-900">{stats?.totalProducts || 0}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </FadeIn>
-        )}
 
-        {/* Products List */}
-        {!error && isLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-16 bg-gray-100 rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : !error && filteredProducts.length === 0 ? (
-          <FadeIn className="text-center py-12">
-            <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              제품이 없습니다
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              아직 등록된 제품이 없습니다.
-            </p>
-            <Link href="/dashboard/inventory/products/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                제품 등록하기
-              </Button>
-            </Link>
-          </FadeIn>
-        ) : !error ? (
-          <div className="space-y-4">
-            {/* Table Header */}
-            <FadeIn>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground">
-                    <div className="col-span-4">제품 정보</div>
-                    <div className="col-span-2">유형/카테고리</div>
-                    <div className="col-span-2 text-right">재고 수량</div>
-                    <div className="col-span-2 text-right">판매가</div>
-                    <div className="col-span-2 text-right">작업</div>
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-50 rounded-lg">
+                    <TrendingDown className="h-5 w-5 text-amber-600" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">재고 부족</p>
+                    <p className="text-xl font-bold text-amber-600">{stats?.lowStockProducts || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-50 rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">재고 없음</p>
+                    <p className="text-xl font-bold text-red-600">{stats?.outOfStockProducts || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-50 rounded-lg">
+                    <Clock className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">유통기한 임박</p>
+                    <p className="text-xl font-bold text-orange-600">{stats?.expiringProducts || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-50 rounded-lg">
+                    <Truck className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">대기 발주</p>
+                    <p className="text-xl font-bold text-slate-900">{stats?.pendingOrders || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-50 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">재고 가치</p>
+                    <p className="text-lg font-bold text-emerald-600 truncate" title={formatCurrency(stats?.totalStockValue || 0)}>
+                      {formatCurrency(stats?.totalStockValue || 0)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Actions Bar */}
+          <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex flex-1 gap-2 flex-wrap w-full sm:w-auto">
+              <div className="relative flex-1 min-w-[200px] max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  type="search"
+                  placeholder="제품명, 바코드로 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                />
+              </div>
+              <NativeSelect
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-32 h-9"
+              >
+                <option value="">전체 유형</option>
+                <option value="MEDICATION">약품</option>
+                <option value="SUPPLY">소모품</option>
+                <option value="EQUIPMENT">장비</option>
+                <option value="VACCINE">백신</option>
+                <option value="FOOD">사료</option>
+                <option value="OTHER">기타</option>
+              </NativeSelect>
+              <NativeSelect
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-32 h-9"
+              >
+                <option value="">전체 카테고리</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </NativeSelect>
+              <NativeSelect
+                value={stockFilter}
+                onChange={(e) => setStockFilter(e.target.value)}
+                className="w-32 h-9"
+              >
+                <option value="">재고 상태</option>
+                <option value="low">부족 재고</option>
+              </NativeSelect>
+            </div>
+
+            <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={fetchProducts}>
+              <RefreshCw className={`h-4 w-4 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </FadeIn>
+
+          {/* Error State */}
+          {error && (
+            <FadeIn>
+              <div className="p-4 rounded-lg border border-red-100 bg-red-50 text-red-600 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>{error}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={fetchProducts} className="text-red-600 hover:text-red-700 hover:bg-red-100">
+                  다시 시도
+                </Button>
+              </div>
             </FadeIn>
+          )}
 
-            {filteredProducts.map((product) => {
-              const stockStatus = getStockStatus(product);
-              const totalStock = getTotalStock(product);
+          {/* Products Table */}
+          <SlideUp className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                  <TableHead className="w-[300px]">제품 정보</TableHead>
+                  <TableHead>유형/카테고리</TableHead>
+                  <TableHead className="text-right">재고 수량</TableHead>
+                  <TableHead className="text-right">판매가 (원가)</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-10 w-48 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-10 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-10 w-24 bg-slate-100 rounded animate-pulse ml-auto" /></TableCell>
+                      <TableCell><div className="h-10 w-32 bg-slate-100 rounded animate-pulse ml-auto" /></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-slate-100 rounded animate-pulse" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredProducts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-64 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <Package className="h-8 w-8 mb-2 text-slate-300" />
+                        <p>제품이 없습니다</p>
+                        <p className="text-xs text-slate-400 mt-1">검색 조건에 맞는 제품을 찾을 수 없습니다</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredProducts.map((product) => {
+                    const stockStatus = getStockStatus(product);
+                    const totalStock = getTotalStock(product);
 
-              return (
-                <SlideUp key={product.id}>
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Product Info */}
-                        <div className="col-span-4">
+                    return (
+                      <TableRow
+                        key={product.id}
+                        className="cursor-pointer hover:bg-slate-50 transition-colors"
+                        onClick={() => router.push(`/dashboard/inventory/products/${product.id}`)}
+                      >
+                        <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                              <Package className="h-5 w-5 text-gray-500" />
+                            <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
+                              <Package className="h-5 w-5 text-slate-500" />
                             </div>
                             <div>
-                              <h3 className="font-semibold">{product.name}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {product.barcode && `바코드: ${product.barcode}`}
-                              </p>
+                              <div className="font-medium text-slate-900">{product.name}</div>
+                              {product.barcode && (
+                                <div className="text-xs text-slate-500 font-mono tracking-wider">{product.barcode}</div>
+                              )}
                             </div>
                           </div>
-                        </div>
-
-                        {/* Type & Category */}
-                        <div className="col-span-2">
-                          <div className="flex flex-col gap-1">
-                            <span
-                              className={`inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium ${productTypeColors[product.type]}`}
-                            >
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1 items-start">
+                            <Badge className={`font-normal border ${productTypeColors[product.type] || 'bg-slate-100 text-slate-700'}`}>
                               {productTypeLabels[product.type] || product.type}
-                            </span>
+                            </Badge>
                             {product.category && (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-xs text-slate-500 pl-1">
                                 {product.category.name}
                               </span>
                             )}
                           </div>
-                        </div>
-
-                        {/* Stock Quantity */}
-                        <div className="col-span-2 text-right">
+                        </TableCell>
+                        <TableCell className="text-right">
                           <div className="flex flex-col items-end gap-1">
-                            <span className="text-lg font-semibold">
-                              {totalStock} {product.unit}
-                            </span>
-                            <span
-                              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${stockStatus.color}`}
-                            >
+                            <span className="font-semibold text-slate-900">{totalStock} <span className="text-xs font-normal text-slate-500">{product.unit}</span></span>
+                            <Badge variant="outline" className={`font-medium text-[10px] px-1.5 py-0 h-5 ${stockStatus.color}`}>
                               {stockStatus.label}
-                            </span>
+                            </Badge>
                           </div>
-                        </div>
-
-                        {/* Selling Price */}
-                        <div className="col-span-2 text-right">
-                          <span className="font-medium">
-                            {formatCurrency(product.sellingPrice)}
-                          </span>
-                          {product.costPrice && (
-                            <p className="text-xs text-muted-foreground">
-                              원가: {formatCurrency(product.costPrice)}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="col-span-2 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Link href={`/dashboard/inventory/products/${product.id}/adjust`}>
-                              <Button variant="outline" size="sm">
-                                수량 조정
-                              </Button>
-                            </Link>
-                            <Link href={`/dashboard/inventory/products/${product.id}`}>
-                              <Button variant="outline" size="sm">
-                                상세
-                              </Button>
-                            </Link>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="text-slate-900">{formatCurrency(product.sellingPrice)}</span>
+                            {product.costPrice && (
+                              <span className="text-xs text-slate-400">({formatCurrency(product.costPrice)})</span>
+                            )}
                           </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </SlideUp>
-              );
-            })}
-          </div>
-        ) : null}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => router.push(`/dashboard/inventory/products/${product.id}`)}>
+                                상세 정보
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(`/dashboard/inventory/products/${product.id}/adjust`)}>
+                                재고 조정
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(`/dashboard/inventory/products/${product.id}/edit`)}>
+                                정보 수정
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </SlideUp>
 
-        {/* Pagination */}
-        {!isLoading && !error && totalPages > 1 && (
-          <FadeIn className="flex items-center justify-center gap-2 mt-6">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </FadeIn>
-        )}
-      </StaggerContainer>
+          {/* Pagination */}
+          {!isLoading && !error && totalPages > 1 && (
+            <FadeIn className="flex items-center justify-center gap-2 mt-6 pb-6">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-slate-600 font-medium">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </FadeIn>
+          )}
+
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

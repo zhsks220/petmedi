@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Building2, MapPin, Phone, Mail, AlertCircle, RefreshCw } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Button, Input, Card, CardContent, Badge } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, Building2, MapPin, Phone, Mail, AlertCircle, RefreshCw, Filter, MoreHorizontal } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
+import { Button, Input, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
 import { hospitalsApi } from '@/lib/api';
 import { formatPhoneNumber, formatDate } from '@/lib/utils';
 import { AxiosError } from 'axios';
@@ -27,6 +28,7 @@ interface Hospital {
 }
 
 export default function HospitalsPage() {
+  const router = useRouter();
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [filteredHospitals, setFilteredHospitals] = useState<Hospital[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,139 +87,163 @@ export default function HospitalsPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="병원 관리" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="병원 관리"
+        description="등록된 동물병원을 관리하고 현황을 조회합니다"
+        icon={Building2}
+      >
+        <Link href="/dashboard/hospitals/new">
+          <Button size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            병원 등록
+          </Button>
+        </Link>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6 space-y-6">
-        {/* Actions Bar */}
-        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              type="search"
-              placeholder="병원명, 주소, 사업자번호로 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Link href="/dashboard/hospitals/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              병원 등록
-            </Button>
-          </Link>
-        </FadeIn>
-
-        {/* Error State */}
-        {error && (
-          <FadeIn>
-            <Card className="border-destructive bg-destructive/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <div>
-                      <p className="font-medium text-destructive">오류 발생</p>
-                      <p className="text-sm text-muted-foreground">{error}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={fetchHospitals}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    다시 시도
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </FadeIn>
-        )}
-
-        {/* Hospitals List */}
-        {!error && isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-32 bg-gray-100 rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : !error && filteredHospitals.length === 0 ? (
-          <FadeIn className="text-center py-12">
-            <Building2 className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              등록된 병원이 없습니다
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              첫 번째 병원을 등록해 보세요
-            </p>
-            <Link href="/dashboard/hospitals/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                병원 등록하기
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-7xl mx-auto space-y-6">
+          {/* Actions Bar */}
+          <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="relative flex-1 w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                type="search"
+                placeholder="병원명, 주소, 사업자번호 검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="h-9 gap-2">
+                <Filter className="h-3.5 w-3.5 text-slate-500" />
+                필터
               </Button>
-            </Link>
+              <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={fetchHospitals}>
+                <RefreshCw className={`h-4 w-4 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </FadeIn>
-        ) : !error ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredHospitals.map((hospital) => (
-              <SlideUp key={hospital.id}>
-                <Link href={`/dashboard/hospitals/${hospital.id}`}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
+
+          {/* Error State */}
+          {error && (
+            <FadeIn>
+              <div className="p-4 rounded-lg border border-red-100 bg-red-50 text-red-600 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>{error}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={fetchHospitals} className="text-red-600 hover:text-red-700 hover:bg-red-100">
+                  다시 시도
+                </Button>
+              </div>
+            </FadeIn>
+          )}
+
+          {/* Hospitals Table */}
+          <SlideUp className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                  <TableHead className="w-[300px]">병원 정보</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead>연락처</TableHead>
+                  <TableHead>주소</TableHead>
+                  <TableHead>등록일</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-10 w-48 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-6 w-16 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-24 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-slate-100 rounded animate-pulse" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredHospitals.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <Building2 className="h-8 w-8 mb-2 text-slate-300" />
+                        <p>등록된 병원이 없습니다</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredHospitals.map((hospital) => (
+                    <TableRow
+                      key={hospital.id}
+                      className="cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => router.push(`/dashboard/hospitals/${hospital.id}`)}
+                    >
+                      <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Building2 className="h-6 w-6 text-primary" />
+                          <div className="h-8 w-8 rounded bg-primary/5 flex items-center justify-center text-primary">
+                            <Building2 className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-lg">{hospital.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {hospital.businessNumber}
-                            </p>
+                            <p className="font-medium text-slate-900">{hospital.name}</p>
+                            <p className="text-xs text-slate-500">{hospital.businessNumber}</p>
                           </div>
                         </div>
-                        {getStatusBadge(hospital.status)}
-                      </div>
-
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-start gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                          <span className="line-clamp-2">
-                            {hospital.address}
-                            {hospital.addressDetail && ` ${hospital.addressDetail}`}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{formatPhoneNumber(hospital.phone)}</span>
-                        </div>
-                        {hospital.email && (
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span className="truncate">{hospital.email}</span>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(hospital.status)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-sm text-slate-600">
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {formatPhoneNumber(hospital.phone)}
                           </div>
-                        )}
-                      </div>
-
-                      <div className="mt-4 pt-4 border-t flex justify-between text-xs text-muted-foreground">
-                        <span>등록일: {formatDate(hospital.createdAt)}</span>
-                        {hospital._count && (
-                          <span>
-                            직원 {hospital._count.staff}명 · 환자{' '}
-                            {hospital._count.animals}마리
+                          {hospital.email && (
+                            <div className="flex items-center gap-1 text-slate-400 text-xs">
+                              <Mail className="h-3 w-3" />
+                              {hospital.email}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-sm text-slate-600 max-w-[300px]">
+                          <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate">
+                            {hospital.address} {hospital.addressDetail}
                           </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </SlideUp>
-            ))}
-          </div>
-        ) : null}
-      </StaggerContainer>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-500 text-sm">
+                        {formatDate(hospital.createdAt)}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/hospitals/${hospital.id}`)}>
+                              상세 보기
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/hospitals/${hospital.id}/edit`)}>
+                              수정하기
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </SlideUp>
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

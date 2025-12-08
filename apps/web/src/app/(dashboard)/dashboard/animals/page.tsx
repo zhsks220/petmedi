@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, PawPrint, AlertCircle, RefreshCw } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, PawPrint, AlertCircle, RefreshCw, Filter, MoreHorizontal, User } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
+import { Button, Input, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, NativeSelect } from '@/components/ui';
 import { animalsApi } from '@/lib/api';
 import { getSpeciesLabel, getGenderLabel, calculateAge, formatDate } from '@/lib/utils';
 import { AxiosError } from 'axios';
@@ -26,6 +27,7 @@ interface Animal {
 }
 
 export default function AnimalsPage() {
+  const router = useRouter();
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [filteredAnimals, setFilteredAnimals] = useState<Animal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,161 +79,180 @@ export default function AnimalsPage() {
   }, [searchTerm, speciesFilter, animals]);
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="동물 관리" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="동물 관리"
+        description="등록된 환자(동물) 정보를 관리하고 진료 내역을 확인합니다"
+        icon={PawPrint}
+      >
+        <Link href="/dashboard/animals/new">
+          <Button size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            동물 등록
+          </Button>
+        </Link>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6 space-y-6">
-        {/* Actions Bar */}
-        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="flex flex-1 gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="이름, 코드, 품종, 보호자로 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-7xl mx-auto space-y-6">
+          {/* Actions Bar */}
+          <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex flex-1 gap-4 w-full sm:w-auto">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  type="search"
+                  placeholder="이름, 코드, 품종, 보호자 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                />
+              </div>
+              <NativeSelect
+                value={speciesFilter}
+                onChange={(e) => setSpeciesFilter(e.target.value)}
+                className="w-32 sm:w-40 h-9"
+              >
+                <option value="">모든 종류</option>
+                <option value="DOG">강아지</option>
+                <option value="CAT">고양이</option>
+                <option value="BIRD">조류</option>
+                <option value="RABBIT">토끼</option>
+                <option value="HAMSTER">햄스터</option>
+                <option value="REPTILE">파충류</option>
+                <option value="OTHER">기타</option>
+              </NativeSelect>
             </div>
-            <NativeSelect
-              value={speciesFilter}
-              onChange={(e) => setSpeciesFilter(e.target.value)}
-              className="w-40"
-            >
-              <option value="">모든 종류</option>
-              <option value="DOG">강아지</option>
-              <option value="CAT">고양이</option>
-              <option value="BIRD">조류</option>
-              <option value="RABBIT">토끼</option>
-              <option value="HAMSTER">햄스터</option>
-              <option value="REPTILE">파충류</option>
-              <option value="OTHER">기타</option>
-            </NativeSelect>
-          </div>
-          <Link href="/dashboard/animals/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              동물 등록
-            </Button>
-          </Link>
-        </FadeIn>
-
-        {/* Error State */}
-        {error && (
-          <FadeIn>
-            <Card className="border-destructive bg-destructive/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <div>
-                      <p className="font-medium text-destructive">오류 발생</p>
-                      <p className="text-sm text-muted-foreground">{error}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={fetchAnimals}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    다시 시도
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </FadeIn>
-        )}
-
-        {/* Animals List */}
-        {!error && isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-24 bg-gray-100 rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : !error && filteredAnimals.length === 0 ? (
-          <FadeIn className="text-center py-12">
-            <PawPrint className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              등록된 동물이 없습니다
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              첫 번째 동물을 등록해 보세요
-            </p>
-            <Link href="/dashboard/animals/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                동물 등록하기
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={fetchAnimals}>
+                <RefreshCw className={`h-4 w-4 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
-            </Link>
+            </div>
           </FadeIn>
-        ) : !error ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAnimals.map((animal) => (
-              <SlideUp key={animal.id}>
-                <Link href={`/dashboard/animals/${animal.id}`}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
+
+          {/* Error State */}
+          {error && (
+            <FadeIn>
+              <div className="p-4 rounded-lg border border-red-100 bg-red-50 text-red-600 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>{error}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={fetchAnimals} className="text-red-600 hover:text-red-700 hover:bg-red-100">
+                  다시 시도
+                </Button>
+              </div>
+            </FadeIn>
+          )}
+
+          {/* Animals Table */}
+          <SlideUp className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                  <TableHead className="w-[300px]">환자 정보</TableHead>
+                  <TableHead>품종/성별</TableHead>
+                  <TableHead>나이/체중</TableHead>
+                  <TableHead>보호자</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-10 w-48 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-10 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-10 w-24 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-10 w-24 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-6 w-16 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-slate-100 rounded animate-pulse" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredAnimals.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <PawPrint className="h-8 w-8 mb-2 text-slate-300" />
+                        <p>등록된 동물이 없습니다</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAnimals.map((animal) => (
+                    <TableRow
+                      key={animal.id}
+                      className="cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => router.push(`/dashboard/animals/${animal.id}`)}
+                    >
+                      <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <PawPrint className="h-6 w-6 text-primary" />
+                          <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
+                            <PawPrint className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-lg">{animal.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {animal.animalCode}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-slate-900">{animal.name}</span>
+                              <span className="text-xs text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded">{animal.animalCode}</span>
+                            </div>
+                            <span className="text-xs text-slate-500">{getSpeciesLabel(animal.species)}</span>
                           </div>
                         </div>
-                        <Badge variant="secondary">
-                          {getSpeciesLabel(animal.species)}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">품종</span>
-                          <span>{animal.breed || '-'}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-sm">
+                          <span className="text-slate-700">{animal.breed || '-'}</span>
+                          <span className="text-xs text-slate-500">{getGenderLabel(animal.gender)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">성별</span>
-                          <span>{getGenderLabel(animal.gender)}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-sm">
+                          <span className="text-slate-700">{animal.birthDate ? calculateAge(animal.birthDate) : '-'}</span>
+                          {animal.weight && <span className="text-xs text-slate-500">{animal.weight}kg</span>}
                         </div>
-                        {animal.birthDate && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">나이</span>
-                            <span>{calculateAge(animal.birthDate)}</span>
-                          </div>
-                        )}
-                        {animal.weight && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">체중</span>
-                            <span>{animal.weight} kg</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">보호자</span>
-                          <span>{animal.owner?.name || '-'}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm text-slate-700">
+                          <User className="h-3 w-3 text-slate-400" />
+                          {animal.owner?.name || '-'}
                         </div>
-                      </div>
-
-                      <div className="mt-4 pt-4 border-t flex justify-between items-center text-xs text-muted-foreground">
-                        <span>등록일: {formatDate(animal.createdAt)}</span>
+                      </TableCell>
+                      <TableCell>
                         {animal.isNeutered && (
-                          <Badge variant="outline">중성화</Badge>
+                          <Badge variant="outline" className="text-xs font-normal text-slate-500 border-slate-300">
+                            중성화
+                          </Badge>
                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </SlideUp>
-            ))}
-          </div>
-        ) : null}
-      </StaggerContainer>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/animals/${animal.id}`)}>
+                              상세 보기
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/animals/${animal.id}/edit`)}>
+                              수정하기
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/medical-records/new?animalId=${animal.id}`)}>
+                              진료 기록 추가
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </SlideUp>
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

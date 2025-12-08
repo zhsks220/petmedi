@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, FileText, AlertCircle, RefreshCw } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, FileText, AlertCircle, RefreshCw, Filter, MoreHorizontal, Stethoscope } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
+import { Button, Input, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, NativeSelect } from '@/components/ui';
 import { medicalRecordsApi } from '@/lib/api';
 import { getVisitTypeLabel, formatDateTime } from '@/lib/utils';
 import { AxiosError } from 'axios';
@@ -34,6 +35,7 @@ interface MedicalRecord {
 }
 
 export default function MedicalRecordsPage() {
+  const router = useRouter();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<MedicalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,157 +103,189 @@ export default function MedicalRecordsPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="진료 기록" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="진료 기록"
+        description="환자의 진료 이력 및 의료 기록을 관리합니다"
+        icon={FileText}
+      >
+        <Link href="/dashboard/medical-records/new">
+          <Button size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            진료 기록 작성
+          </Button>
+        </Link>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6 space-y-6">
-        {/* Actions Bar */}
-        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="flex flex-1 gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="환자명, 코드, 증상으로 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-7xl mx-auto space-y-6">
+          {/* Actions Bar */}
+          <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex flex-1 gap-4 w-full sm:w-auto">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  type="search"
+                  placeholder="환자명, 코드, 증상 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                />
+              </div>
+              <NativeSelect
+                value={visitTypeFilter}
+                onChange={(e) => setVisitTypeFilter(e.target.value)}
+                className="w-32 sm:w-40 h-9"
+              >
+                <option value="">모든 유형</option>
+                <option value="FIRST_VISIT">초진</option>
+                <option value="REVISIT">재진</option>
+                <option value="VACCINATION">예방접종</option>
+                <option value="SURGERY">수술</option>
+                <option value="HEALTH_CHECK">건강검진</option>
+                <option value="EMERGENCY">응급</option>
+                <option value="GROOMING">미용</option>
+                <option value="OTHER">기타</option>
+              </NativeSelect>
             </div>
-            <NativeSelect
-              value={visitTypeFilter}
-              onChange={(e) => setVisitTypeFilter(e.target.value)}
-              className="w-40"
-            >
-              <option value="">모든 유형</option>
-              <option value="FIRST_VISIT">초진</option>
-              <option value="REVISIT">재진</option>
-              <option value="VACCINATION">예방접종</option>
-              <option value="SURGERY">수술</option>
-              <option value="HEALTH_CHECK">건강검진</option>
-              <option value="EMERGENCY">응급</option>
-              <option value="GROOMING">미용</option>
-              <option value="OTHER">기타</option>
-            </NativeSelect>
-          </div>
-          <Link href="/dashboard/medical-records/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              진료 기록 작성
+            <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={fetchRecords}>
+              <RefreshCw className={`h-4 w-4 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
-          </Link>
-        </FadeIn>
+          </FadeIn>
 
-        {/* Error State */}
-        {error && (
-          <FadeIn>
-            <Card className="border-destructive bg-destructive/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <div>
-                      <p className="font-medium text-destructive">오류 발생</p>
-                      <p className="text-sm text-muted-foreground">{error}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={fetchRecords}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    다시 시도
-                  </Button>
+          {/* Error State */}
+          {error && (
+            <FadeIn>
+              <div className="p-4 rounded-lg border border-red-100 bg-red-50 text-red-600 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>{error}</span>
                 </div>
-              </CardContent>
-            </Card>
-          </FadeIn>
-        )}
+                <Button variant="ghost" size="sm" onClick={fetchRecords} className="text-red-600 hover:text-red-700 hover:bg-red-100">
+                  다시 시도
+                </Button>
+              </div>
+            </FadeIn>
+          )}
 
-        {/* Records List */}
-        {!error && isLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-20 bg-gray-100 rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : !error && filteredRecords.length === 0 ? (
-          <FadeIn className="text-center py-12">
-            <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              진료 기록이 없습니다
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              첫 번째 진료 기록을 작성해 보세요
-            </p>
-            <Link href="/dashboard/medical-records/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                진료 기록 작성하기
-              </Button>
-            </Link>
-          </FadeIn>
-        ) : !error ? (
-          <div className="space-y-4">
-            {filteredRecords.map((record) => (
-              <SlideUp key={record.id}>
-                <Link href={`/dashboard/medical-records/${record.id}`}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Badge variant={getVisitTypeBadgeVariant(record.visitType)}>
-                              {getVisitTypeLabel(record.visitType)}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              {formatDateTime(record.createdAt)}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-4 mb-3">
-                            <div>
-                              <p className="font-semibold text-lg">
-                                {record.animal.name}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {record.animal.animalCode}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">주요 증상: </span>
-                              {record.chiefComplaint}
-                            </p>
-                            {record.diagnosis && (
-                              <p className="text-sm">
-                                <span className="text-muted-foreground">진단: </span>
-                                {record.diagnosis}
-                              </p>
-                            )}
-                          </div>
+          {/* Records Table */}
+          <SlideUp className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                  <TableHead className="w-[180px]">진료 일시</TableHead>
+                  <TableHead className="w-[100px]">유형</TableHead>
+                  <TableHead className="w-[200px]">환자 정보</TableHead>
+                  <TableHead>증상 및 진단</TableHead>
+                  <TableHead>의료진/병원</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-4 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-6 w-16 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-10 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-48 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-24 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-slate-100 rounded animate-pulse" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredRecords.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-64 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <FileText className="h-8 w-8 mb-2 text-slate-300" />
+                        <p>진료 기록이 없습니다</p>
+                        <p className="text-xs text-slate-400 mt-1">검색 조건에 맞는 진료 기록을 찾을 수 없습니다</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredRecords.map((record) => (
+                    <TableRow
+                      key={record.id}
+                      className="cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => router.push(`/dashboard/medical-records/${record.id}`)}
+                    >
+                      <TableCell className="align-top py-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-slate-900">
+                            {formatDateTime(record.createdAt).split(' ')[0]}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {formatDateTime(record.createdAt).split(' ')[1]} {formatDateTime(record.createdAt).split(' ')[2]}
+                          </span>
                         </div>
-
-                        <div className="text-right text-sm">
-                          <p className="text-muted-foreground">{record.hospital.name}</p>
-                          {record.veterinarian && (
-                            <p className="text-muted-foreground">
-                              담당: {record.veterinarian.name}
-                            </p>
+                      </TableCell>
+                      <TableCell className="align-top py-3">
+                        <Badge variant={getVisitTypeBadgeVariant(record.visitType)} className="font-normal w-fit">
+                          {getVisitTypeLabel(record.visitType)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="align-top py-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium text-slate-900">{record.animal.name}</span>
+                          <span className="text-xs text-slate-500 font-mono bg-slate-100 px-1 py-0.5 rounded w-fit">
+                            {record.animal.animalCode}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top py-3">
+                        <div className="flex flex-col gap-1.5 max-w-md">
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs font-semibold text-slate-500 min-w-[30px] mt-0.5">증상</span>
+                            <span className="text-sm text-slate-700 line-clamp-1">{record.chiefComplaint}</span>
+                          </div>
+                          {record.diagnosis && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs font-semibold text-blue-600 min-w-[30px] mt-0.5">진단</span>
+                              <span className="text-sm text-slate-900 font-medium line-clamp-1">{record.diagnosis}</span>
+                            </div>
                           )}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </SlideUp>
-            ))}
-          </div>
-        ) : null}
-      </StaggerContainer>
+                      </TableCell>
+                      <TableCell className="align-top py-3">
+                        <div className="flex flex-col">
+                          <span className="text-sm text-slate-700">{record.hospital.name}</span>
+                          {record.veterinarian && (
+                            <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
+                              <Stethoscope className="h-3 w-3" />
+                              {record.veterinarian.name}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top py-3" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/medical-records/${record.id}`)}>
+                              상세 보기
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/medical-records/${record.id}/edit`)}>
+                              내용 수정
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              처방전 인쇄
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </SlideUp>
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

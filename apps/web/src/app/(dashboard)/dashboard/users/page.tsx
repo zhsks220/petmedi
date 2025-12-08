@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, Users, Mail, Phone } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Input, Card, CardContent, Badge } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+import { Search, Users, Mail, Phone, AlertCircle, RefreshCw, Filter, MoreHorizontal, User as UserIcon } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
+import { Button, Input, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
 import { usersApi } from '@/lib/api';
 import { getRoleLabel, formatDate } from '@/lib/utils';
 import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
@@ -21,29 +22,33 @@ interface User {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await usersApi.getAll();
+      const userData = response.data?.data || response.data || [];
+      setUsers(userData);
+      setFilteredUsers(userData);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      // 에러 발생시 에러 메시지 설정
+      setError('사용자 목록을 불러오는데 실패했습니다.');
+      setUsers([]);
+      setFilteredUsers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await usersApi.getAll();
-        // API 응답이 페이지네이션 구조 { data: [], total, ... }일 수 있음
-        const userData = response.data?.data || response.data || [];
-        setUsers(userData);
-        setFilteredUsers(userData);
-      } catch (error) {
-        console.error('Failed to fetch users:', error);
-        // 에러 시 빈 배열로 초기화
-        setUsers([]);
-        setFilteredUsers([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
 
@@ -81,91 +86,157 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="사용자 관리" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="사용자 관리"
+        description="시스템에 등록된 사용자(직원) 계정을 관리합니다"
+        icon={Users}
+      >
+        <Button size="sm" className="gap-2" disabled>
+          <UserIcon className="h-4 w-4" />
+          사용자 초대
+        </Button>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6 space-y-6">
-        {/* Search Bar */}
-        <FadeIn className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            type="search"
-            placeholder="이름, 이메일, 전화번호로 검색..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </FadeIn>
-
-        {/* Users List */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-24 bg-gray-100 rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <FadeIn className="text-center py-12">
-            <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              사용자가 없습니다
-            </h3>
-            <p className="text-muted-foreground">
-              검색 조건을 변경해 보세요
-            </p>
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-7xl mx-auto space-y-6">
+          {/* Actions Bar */}
+          <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="relative flex-1 w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                type="search"
+                placeholder="이름, 이메일, 전화번호 검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Button variant="outline" size="sm" className="h-9 gap-2">
+                <Filter className="h-3.5 w-3.5 text-slate-500" />
+                필터
+              </Button>
+              <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={fetchUsers}>
+                <RefreshCw className={`h-4 w-4 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </FadeIn>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(filteredUsers || []).map((user) => (
-              <SlideUp key={user.id}>
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-lg font-medium text-primary">
+
+          {/* Error State */}
+          {error && (
+            <FadeIn>
+              <div className="p-4 rounded-lg border border-red-100 bg-red-50 text-red-600 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>{error}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={fetchUsers} className="text-red-600 hover:text-red-700 hover:bg-red-100">
+                  다시 시도
+                </Button>
+              </div>
+            </FadeIn>
+          )}
+
+          {/* Users Table */}
+          <SlideUp className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                  <TableHead className="w-[250px]">사용자 정보</TableHead>
+                  <TableHead>역할</TableHead>
+                  <TableHead>소속 병원</TableHead>
+                  <TableHead>연락처</TableHead>
+                  <TableHead>가입일</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-10 w-48 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-6 w-20 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-24 bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-slate-100 rounded animate-pulse" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <Users className="h-8 w-8 mb-2 text-slate-300" />
+                        <p>사용자가 없습니다</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow
+                      key={user.id}
+                      className="cursor-pointer hover:bg-slate-50 transition-colors"
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-medium border border-slate-200">
                             {user.name.charAt(0)}
-                          </span>
+                          </div>
+                          <div>
+                            <div className="font-medium text-slate-900">{user.name}</div>
+                            <div className="text-xs text-slate-500">{user.email}</div>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-semibold">{user.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {user.hospital?.name || '소속 없음'}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {getRoleLabel(user.role)}
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate">{user.email}</span>
-                      </div>
-                      {user.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{user.phone}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
-                      가입일: {formatDate(user.createdAt)}
-                    </div>
-                  </CardContent>
-                </Card>
-              </SlideUp>
-            ))}
-          </div>
-        )}
-      </StaggerContainer>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(user.role)} className="font-normal">
+                          {getRoleLabel(user.role)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-slate-600">
+                          {user.hospital?.name || <span className="text-slate-400 text-xs">소속 없음</span>}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {user.phone ? (
+                          <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                            <Phone className="h-3.5 w-3.5 text-slate-400" />
+                            {user.phone}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-500">
+                        {formatDate(user.createdAt)}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem disabled>
+                              정보 수정
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600" disabled>
+                              계정 비활성화
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </SlideUp>
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

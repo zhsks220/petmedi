@@ -2,10 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Package } from 'lucide-react';
+import { ArrowLeft, Save, Package, Tag, Building2, Box } from 'lucide-react';
 import Link from 'next/link';
-import { Header } from '@/components/layout/header';
-import { Button, Input, Card, CardContent, NativeSelect, Textarea } from '@/components/ui';
+import { PageHeader } from '@/components/layout/page-header';
+import {
+  Button,
+  Input,
+  Card,
+  CardContent,
+  NativeSelect,
+  Textarea,
+  Label
+} from '@/components/ui';
 import { inventoryApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AxiosError } from 'axios';
@@ -113,123 +121,129 @@ export default function NewProductPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Header title="제품 등록" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <PageHeader
+        title="제품 등록"
+        description="새로운 제품을 등록합니다"
+        icon={Package}
+      >
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/inventory">
+            <Button variant="outline" className="bg-white">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              목록으로
+            </Button>
+          </Link>
+          <Button onClick={(e) => handleSubmit(e as any)} disabled={isSubmitting}>
+            <Save className="h-4 w-4 mr-2" />
+            {isSubmitting ? '저장 중...' : '저장'}
+          </Button>
+        </div>
+      </PageHeader>
 
-      <StaggerContainer className="flex-1 p-6">
-        <div className="max-w-3xl mx-auto">
-          {/* Back Button */}
-          <FadeIn>
-            <Link
-              href="/dashboard/inventory"
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              재고 목록으로 돌아가기
-            </Link>
-          </FadeIn>
-
-          <SlideUp>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Package className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold">새 제품 등록</h2>
-                    <p className="text-sm text-muted-foreground">
-                      재고 관리를 위한 새 제품을 등록합니다.
-                    </p>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                    {error}
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Basic Info */}
-                  <div className="space-y-4">
-                    <h3 className="font-medium text-gray-900">기본 정보</h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">제품명 *</label>
-                        <Input
-                          name="name"
-                          value={formData.name}
-                          onChange={handleChange}
-                          placeholder="예: 아목시실린 캡슐 250mg"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">바코드</label>
-                        <Input
-                          name="barcode"
-                          value={formData.barcode}
-                          onChange={handleChange}
-                          placeholder="바코드 번호"
-                        />
-                      </div>
+      <div className="flex-1 overflow-auto p-6 md:p-8">
+        <StaggerContainer className="max-w-4xl mx-auto space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <SlideUp>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Tag className="h-5 w-5 text-blue-600" />
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">단위 *</label>
-                        <Input
-                          name="unit"
-                          value={formData.unit}
-                          onChange={handleChange}
-                          placeholder="예: 개, 박스, ml"
-                          required
-                        />
-                      </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-slate-900">기본 정보</h2>
+                      <p className="text-sm text-slate-500">
+                        제품의 기본 정보를 입력하세요.
+                      </p>
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">제품 유형 *</label>
-                        <NativeSelect
-                          name="type"
-                          value={formData.type}
-                          onChange={handleChange}
-                          required
-                        >
-                          <option value="MEDICATION">약품</option>
-                          <option value="VACCINE">백신</option>
-                          <option value="SUPPLY">소모품</option>
-                          <option value="EQUIPMENT">장비</option>
-                          <option value="FOOD">사료</option>
-                          <option value="OTHER">기타</option>
-                        </NativeSelect>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">카테고리</label>
-                        <NativeSelect
-                          name="categoryId"
-                          value={formData.categoryId}
-                          onChange={handleChange}
-                        >
-                          <option value="">카테고리 선택</option>
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                              {cat.name}
-                            </option>
-                          ))}
-                        </NativeSelect>
-                      </div>
+                  {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                      {error}
                     </div>
+                  )}
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">공급업체</label>
+                      <Label htmlFor="name">제품명 <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="예: 아목시실린 캡슐 250mg"
+                        required
+                        className="bg-slate-50 border-slate-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="barcode">바코드</Label>
+                      <Input
+                        id="barcode"
+                        name="barcode"
+                        value={formData.barcode}
+                        onChange={handleChange}
+                        placeholder="바코드 번호"
+                        className="bg-slate-50 border-slate-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="unit">단위 <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="unit"
+                        name="unit"
+                        value={formData.unit}
+                        onChange={handleChange}
+                        placeholder="예: 개, 박스, ml"
+                        required
+                        className="bg-slate-50 border-slate-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="type">제품 유형 <span className="text-red-500">*</span></Label>
                       <NativeSelect
+                        id="type"
+                        name="type"
+                        value={formData.type}
+                        onChange={handleChange}
+                        required
+                        className="bg-slate-50 border-slate-200"
+                      >
+                        <option value="MEDICATION">약품</option>
+                        <option value="VACCINE">백신</option>
+                        <option value="SUPPLY">소모품</option>
+                        <option value="EQUIPMENT">장비</option>
+                        <option value="FOOD">사료</option>
+                        <option value="OTHER">기타</option>
+                      </NativeSelect>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryId">카테고리</Label>
+                      <NativeSelect
+                        id="categoryId"
+                        name="categoryId"
+                        value={formData.categoryId}
+                        onChange={handleChange}
+                        className="bg-slate-50 border-slate-200"
+                      >
+                        <option value="">카테고리 선택</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="supplierId">공급업체</Label>
+                      <NativeSelect
+                        id="supplierId"
                         name="supplierId"
                         value={formData.supplierId}
                         onChange={handleChange}
+                        className="bg-slate-50 border-slate-200"
                       >
                         <option value="">공급업체 선택</option>
                         {suppliers.map((sup) => (
@@ -239,106 +253,131 @@ export default function NewProductPage() {
                         ))}
                       </NativeSelect>
                     </div>
+                  </div>
 
+                  <div className="mt-6 space-y-2">
+                    <Label htmlFor="description">설명</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="제품에 대한 상세 설명"
+                      rows={3}
+                      className="resize-none bg-slate-50 border-slate-200"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </SlideUp>
+
+            {/* Pricing */}
+            <SlideUp delay={0.1}>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-emerald-50 rounded-lg">
+                      <Building2 className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-slate-900">가격 정보</h2>
+                      <p className="text-sm text-slate-500">
+                        구매 원가와 판매 가격을 설정하세요.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">설명</label>
-                      <Textarea
-                        name="description"
-                        value={formData.description}
+                      <Label htmlFor="costPrice">원가</Label>
+                      <Input
+                        id="costPrice"
+                        type="number"
+                        name="costPrice"
+                        value={formData.costPrice}
                         onChange={handleChange}
-                        placeholder="제품에 대한 상세 설명"
-                        rows={3}
+                        placeholder="0"
+                        min="0"
+                        step="1"
+                        className="bg-slate-50 border-slate-200 text-right"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sellingPrice">판매가 <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="sellingPrice"
+                        type="number"
+                        name="sellingPrice"
+                        value={formData.sellingPrice}
+                        onChange={handleChange}
+                        placeholder="0"
+                        min="0"
+                        step="1"
+                        required
+                        className="bg-slate-50 border-slate-200 text-right font-medium"
                       />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </SlideUp>
 
-                  {/* Pricing */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="font-medium text-gray-900">가격 정보</h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">원가</label>
-                        <Input
-                          type="number"
-                          name="costPrice"
-                          value={formData.costPrice}
-                          onChange={handleChange}
-                          placeholder="0"
-                          min="0"
-                          step="1"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">판매가 *</label>
-                        <Input
-                          type="number"
-                          name="sellingPrice"
-                          value={formData.sellingPrice}
-                          onChange={handleChange}
-                          placeholder="0"
-                          min="0"
-                          step="1"
-                          required
-                        />
-                      </div>
+            {/* Inventory Settings */}
+            <SlideUp delay={0.2}>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-amber-50 rounded-lg">
+                      <Box className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-slate-900">재고 설정</h2>
+                      <p className="text-sm text-slate-500">
+                        자동 발주 알림을 위한 재고 수량을 설정하세요.
+                      </p>
                     </div>
                   </div>
 
-                  {/* Inventory Settings */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="font-medium text-gray-900">재고 설정</h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">재주문 기준 수량</label>
-                        <Input
-                          type="number"
-                          name="reorderPoint"
-                          value={formData.reorderPoint}
-                          onChange={handleChange}
-                          placeholder="10"
-                          min="0"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          재고가 이 수량 이하가 되면 재주문 알림을 받습니다.
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">기본 주문 수량</label>
-                        <Input
-                          type="number"
-                          name="reorderQuantity"
-                          value={formData.reorderQuantity}
-                          onChange={handleChange}
-                          placeholder="20"
-                          min="1"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          발주 시 기본으로 설정되는 주문 수량입니다.
-                        </p>
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="reorderPoint">재주문 기준 수량 (Reorder Point)</Label>
+                      <Input
+                        id="reorderPoint"
+                        type="number"
+                        name="reorderPoint"
+                        value={formData.reorderPoint}
+                        onChange={handleChange}
+                        placeholder="10"
+                        min="0"
+                        className="bg-slate-50 border-slate-200"
+                      />
+                      <p className="text-xs text-slate-500">
+                        재고가 이 수량 이하가 되면 재주문 알림이 표시됩니다.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reorderQuantity">기본 주문 수량</Label>
+                      <Input
+                        id="reorderQuantity"
+                        type="number"
+                        name="reorderQuantity"
+                        value={formData.reorderQuantity}
+                        onChange={handleChange}
+                        placeholder="20"
+                        min="1"
+                        className="bg-slate-50 border-slate-200"
+                      />
+                      <p className="text-xs text-slate-500">
+                        발주 시 기본으로 설정되는 주문 수량입니다.
+                      </p>
                     </div>
                   </div>
-
-                  {/* Submit Buttons */}
-                  <div className="flex justify-end gap-3 pt-6 border-t">
-                    <Link href="/dashboard/inventory">
-                      <Button type="button" variant="outline">
-                        취소
-                      </Button>
-                    </Link>
-                    <Button type="submit" disabled={isSubmitting}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {isSubmitting ? '저장 중...' : '제품 등록'}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </SlideUp>
-        </div>
-      </StaggerContainer>
+                </CardContent>
+              </Card>
+            </SlideUp>
+          </form>
+        </StaggerContainer>
+      </div>
     </div>
   );
 }

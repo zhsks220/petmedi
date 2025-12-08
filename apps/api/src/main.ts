@@ -29,6 +29,12 @@ async function bootstrap() {
     .split(',')
     .map((origin) => origin.trim());
 
+  // Production Vercel domains - always allowed
+  const productionDomains = [
+    'https://petmedi.vercel.app',
+    'https://www.petmedi.vercel.app',
+  ];
+
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -40,10 +46,12 @@ async function bootstrap() {
       if (
         allowedOrigins.includes(origin) ||
         allowedOrigins.includes('*') ||
+        productionDomains.includes(origin) ||
         // Allow localhost for development
         origin.match(/^https?:\/\/localhost(:\d+)?$/) ||
-        // Allow Vercel deployments
-        origin.match(/\.vercel\.app$/) ||
+        // Allow all Vercel deployments (preview and production)
+        origin.match(/^https:\/\/.*\.vercel\.app$/) ||
+        origin.match(/^https:\/\/petmedi.*\.vercel\.app$/) ||
         // Allow Expo development
         origin.match(/^exp:\/\//) ||
         // Allow React Native debugger
@@ -52,6 +60,7 @@ async function bootstrap() {
         return callback(null, true);
       }
 
+      console.log(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,

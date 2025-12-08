@@ -21,6 +21,7 @@ import {
   formatDate,
   getVisitTypeLabel,
 } from '@/lib/utils';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface MedicalRecord {
   id: string;
@@ -120,7 +121,7 @@ export default function AnimalDetailPage() {
       <div className="flex flex-col h-full">
         <Header title="동물 상세" />
         <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="text-center">
+          <FadeIn className="text-center">
             <PawPrint className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <p className="text-muted-foreground">동물을 찾을 수 없습니다</p>
             <Link href="/dashboard/animals">
@@ -128,7 +129,7 @@ export default function AnimalDetailPage() {
                 목록으로 돌아가기
               </Button>
             </Link>
-          </div>
+          </FadeIn>
         </div>
       </div>
     );
@@ -138,9 +139,9 @@ export default function AnimalDetailPage() {
     <div className="flex flex-col h-full">
       <Header title="동물 상세" />
 
-      <div className="flex-1 p-6">
+      <StaggerContainer className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          <FadeIn className="flex items-center justify-between mb-6">
             <Link
               href="/dashboard/animals"
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
@@ -165,201 +166,211 @@ export default function AnimalDetailPage() {
                 삭제
               </Button>
             </div>
-          </div>
+          </FadeIn>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Info */}
             <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <PawPrint className="h-8 w-8 text-primary" />
+              <SlideUp>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                          <PawPrint className="h-8 w-8 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-2xl">{animal.name}</CardTitle>
+                          <p className="text-muted-foreground mt-1">
+                            {animal.animalCode}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge>{getSpeciesLabel(animal.species)}</Badge>
+                        {animal.isNeutered && <Badge variant="secondary">중성화</Badge>}
+                        {animal.isDeceased && <Badge variant="destructive">사망</Badge>}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">품종</p>
+                        <p className="font-medium">{animal.breed || '-'}</p>
                       </div>
                       <div>
-                        <CardTitle className="text-2xl">{animal.name}</CardTitle>
-                        <p className="text-muted-foreground mt-1">
-                          {animal.animalCode}
+                        <p className="text-sm text-muted-foreground">성별</p>
+                        <p className="font-medium">{getGenderLabel(animal.gender)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">나이</p>
+                        <p className="font-medium">
+                          {animal.birthDate ? calculateAge(animal.birthDate) : '-'}
                         </p>
                       </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">체중</p>
+                        <p className="font-medium">
+                          {animal.weight ? `${animal.weight} kg` : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">생년월일</p>
+                        <p className="font-medium">
+                          {animal.birthDate ? formatDate(animal.birthDate) : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">마이크로칩</p>
+                        <p className="font-medium">{animal.microchipId || '-'}</p>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Badge>{getSpeciesLabel(animal.species)}</Badge>
-                      {animal.isNeutered && <Badge variant="secondary">중성화</Badge>}
-                      {animal.isDeceased && <Badge variant="destructive">사망</Badge>}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">품종</p>
-                      <p className="font-medium">{animal.breed || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">성별</p>
-                      <p className="font-medium">{getGenderLabel(animal.gender)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">나이</p>
-                      <p className="font-medium">
-                        {animal.birthDate ? calculateAge(animal.birthDate) : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">체중</p>
-                      <p className="font-medium">
-                        {animal.weight ? `${animal.weight} kg` : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">생년월일</p>
-                      <p className="font-medium">
-                        {animal.birthDate ? formatDate(animal.birthDate) : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">마이크로칩</p>
-                      <p className="font-medium">{animal.microchipId || '-'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </SlideUp>
 
               {/* Medical Records */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    진료 기록
-                  </CardTitle>
-                  <Link
-                    href={`/dashboard/medical-records/new?animalId=${animal.id}`}
-                  >
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      새 진료 기록
-                    </Button>
-                  </Link>
-                </CardHeader>
-                <CardContent>
-                  {!animal.medicalRecords ||
-                  animal.medicalRecords.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      진료 기록이 없습니다
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {animal.medicalRecords.map((record) => (
-                        <Link
-                          key={record.id}
-                          href={`/dashboard/medical-records/${record.id}`}
-                        >
-                          <div className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge variant="outline">
-                                {getVisitTypeLabel(record.visitType)}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {formatDate(record.createdAt)}
-                              </span>
+              <SlideUp>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      진료 기록
+                    </CardTitle>
+                    <Link
+                      href={`/dashboard/medical-records/new?animalId=${animal.id}`}
+                    >
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        새 진료 기록
+                      </Button>
+                    </Link>
+                  </CardHeader>
+                  <CardContent>
+                    {!animal.medicalRecords ||
+                      animal.medicalRecords.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        진료 기록이 없습니다
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {animal.medicalRecords.map((record) => (
+                          <Link
+                            key={record.id}
+                            href={`/dashboard/medical-records/${record.id}`}
+                          >
+                            <div className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                              <div className="flex items-center justify-between mb-2">
+                                <Badge variant="outline">
+                                  {getVisitTypeLabel(record.visitType)}
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  {formatDate(record.createdAt)}
+                                </span>
+                              </div>
+                              <p className="font-medium">{record.chiefComplaint}</p>
+                              {record.diagnosis && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  진단: {record.diagnosis}
+                                </p>
+                              )}
+                              {record.veterinarian && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  담당: {record.veterinarian.name}
+                                </p>
+                              )}
                             </div>
-                            <p className="font-medium">{record.chiefComplaint}</p>
-                            {record.diagnosis && (
-                              <p className="text-sm text-muted-foreground mt-1">
-                                진단: {record.diagnosis}
-                              </p>
-                            )}
-                            {record.veterinarian && (
-                              <p className="text-xs text-muted-foreground mt-2">
-                                담당: {record.veterinarian.name}
-                              </p>
-                            )}
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </SlideUp>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Owner Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">보호자 정보</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {animal.owner ? (
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm text-muted-foreground">이름</p>
-                        <p className="font-medium">{animal.owner.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">이메일</p>
-                        <p className="font-medium">{animal.owner.email}</p>
-                      </div>
-                      {animal.owner.phone && (
+              <SlideUp>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">보호자 정보</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {animal.owner ? (
+                      <div className="space-y-3">
                         <div>
-                          <p className="text-sm text-muted-foreground">전화번호</p>
-                          <p className="font-medium">{animal.owner.phone}</p>
+                          <p className="text-sm text-muted-foreground">이름</p>
+                          <p className="font-medium">{animal.owner.name}</p>
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">보호자 정보 없음</p>
-                  )}
-                </CardContent>
-              </Card>
+                        <div>
+                          <p className="text-sm text-muted-foreground">이메일</p>
+                          <p className="font-medium">{animal.owner.email}</p>
+                        </div>
+                        {animal.owner.phone && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">전화번호</p>
+                            <p className="font-medium">{animal.owner.phone}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">보호자 정보 없음</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </SlideUp>
 
               {/* Hospital Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">등록 병원</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {animal.hospital ? (
-                    <div>
-                      <p className="font-medium">{animal.hospital.name}</p>
-                      <Link
-                        href={`/dashboard/hospitals/${animal.hospital.id}`}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        병원 상세 보기 →
-                      </Link>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">병원 정보 없음</p>
-                  )}
-                </CardContent>
-              </Card>
+              <SlideUp>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">등록 병원</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {animal.hospital ? (
+                      <div>
+                        <p className="font-medium">{animal.hospital.name}</p>
+                        <Link
+                          href={`/dashboard/hospitals/${animal.hospital.id}`}
+                          className="text-sm text-primary hover:underline"
+                        >
+                          병원 상세 보기 →
+                        </Link>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">병원 정보 없음</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </SlideUp>
 
               {/* Registration Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">등록 정보</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">등록일</span>
-                      <span>{formatDate(animal.createdAt)}</span>
+              <SlideUp>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">등록 정보</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">등록일</span>
+                        <span>{formatDate(animal.createdAt)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">고유 코드</span>
+                        <span className="font-mono">{animal.animalCode}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">고유 코드</span>
-                      <span className="font-mono">{animal.animalCode}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </SlideUp>
             </div>
           </div>
         </div>
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

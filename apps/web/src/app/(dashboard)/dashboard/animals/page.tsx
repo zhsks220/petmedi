@@ -8,6 +8,7 @@ import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/compone
 import { animalsApi } from '@/lib/api';
 import { getSpeciesLabel, getGenderLabel, calculateAge, formatDate } from '@/lib/utils';
 import { AxiosError } from 'axios';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface Animal {
   id: string;
@@ -79,9 +80,9 @@ export default function AnimalsPage() {
     <div className="flex flex-col h-full">
       <Header title="동물 관리" />
 
-      <div className="flex-1 p-6 space-y-6">
+      <StaggerContainer className="flex-1 p-6 space-y-6">
         {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="flex flex-1 gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -114,27 +115,29 @@ export default function AnimalsPage() {
               동물 등록
             </Button>
           </Link>
-        </div>
+        </FadeIn>
 
         {/* Error State */}
         {error && (
-          <Card className="border-destructive bg-destructive/5">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-medium text-destructive">오류 발생</p>
-                    <p className="text-sm text-muted-foreground">{error}</p>
+          <FadeIn>
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">오류 발생</p>
+                      <p className="text-sm text-muted-foreground">{error}</p>
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={fetchAnimals}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    다시 시도
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchAnimals}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  다시 시도
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </FadeIn>
         )}
 
         {/* Animals List */}
@@ -149,7 +152,7 @@ export default function AnimalsPage() {
             ))}
           </div>
         ) : !error && filteredAnimals.length === 0 ? (
-          <div className="text-center py-12">
+          <FadeIn className="text-center py-12">
             <PawPrint className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               등록된 동물이 없습니다
@@ -163,70 +166,72 @@ export default function AnimalsPage() {
                 동물 등록하기
               </Button>
             </Link>
-          </div>
+          </FadeIn>
         ) : !error ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredAnimals.map((animal) => (
-              <Link key={animal.id} href={`/dashboard/animals/${animal.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <PawPrint className="h-6 w-6 text-primary" />
+              <SlideUp key={animal.id}>
+                <Link href={`/dashboard/animals/${animal.id}`}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <PawPrint className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg">{animal.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {animal.animalCode}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-lg">{animal.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {animal.animalCode}
-                          </p>
-                        </div>
+                        <Badge variant="secondary">
+                          {getSpeciesLabel(animal.species)}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary">
-                        {getSpeciesLabel(animal.species)}
-                      </Badge>
-                    </div>
 
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">품종</span>
-                        <span>{animal.breed || '-'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">성별</span>
-                        <span>{getGenderLabel(animal.gender)}</span>
-                      </div>
-                      {animal.birthDate && (
+                      <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">나이</span>
-                          <span>{calculateAge(animal.birthDate)}</span>
+                          <span className="text-muted-foreground">품종</span>
+                          <span>{animal.breed || '-'}</span>
                         </div>
-                      )}
-                      {animal.weight && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">체중</span>
-                          <span>{animal.weight} kg</span>
+                          <span className="text-muted-foreground">성별</span>
+                          <span>{getGenderLabel(animal.gender)}</span>
                         </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">보호자</span>
-                        <span>{animal.owner?.name || '-'}</span>
+                        {animal.birthDate && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">나이</span>
+                            <span>{calculateAge(animal.birthDate)}</span>
+                          </div>
+                        )}
+                        {animal.weight && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">체중</span>
+                            <span>{animal.weight} kg</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">보호자</span>
+                          <span>{animal.owner?.name || '-'}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="mt-4 pt-4 border-t flex justify-between items-center text-xs text-muted-foreground">
-                      <span>등록일: {formatDate(animal.createdAt)}</span>
-                      {animal.isNeutered && (
-                        <Badge variant="outline">중성화</Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                      <div className="mt-4 pt-4 border-t flex justify-between items-center text-xs text-muted-foreground">
+                        <span>등록일: {formatDate(animal.createdAt)}</span>
+                        {animal.isNeutered && (
+                          <Badge variant="outline">중성화</Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </SlideUp>
             ))}
           </div>
         ) : null}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

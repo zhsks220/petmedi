@@ -8,6 +8,7 @@ import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/compone
 import { medicalRecordsApi } from '@/lib/api';
 import { getVisitTypeLabel, formatDateTime } from '@/lib/utils';
 import { AxiosError } from 'axios';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface MedicalRecord {
   id: string;
@@ -103,9 +104,9 @@ export default function MedicalRecordsPage() {
     <div className="flex flex-col h-full">
       <Header title="진료 기록" />
 
-      <div className="flex-1 p-6 space-y-6">
+      <StaggerContainer className="flex-1 p-6 space-y-6">
         {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="flex flex-1 gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -139,27 +140,29 @@ export default function MedicalRecordsPage() {
               진료 기록 작성
             </Button>
           </Link>
-        </div>
+        </FadeIn>
 
         {/* Error State */}
         {error && (
-          <Card className="border-destructive bg-destructive/5">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-medium text-destructive">오류 발생</p>
-                    <p className="text-sm text-muted-foreground">{error}</p>
+          <FadeIn>
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">오류 발생</p>
+                      <p className="text-sm text-muted-foreground">{error}</p>
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={fetchRecords}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    다시 시도
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchRecords}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  다시 시도
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </FadeIn>
         )}
 
         {/* Records List */}
@@ -174,7 +177,7 @@ export default function MedicalRecordsPage() {
             ))}
           </div>
         ) : !error && filteredRecords.length === 0 ? (
-          <div className="text-center py-12">
+          <FadeIn className="text-center py-12">
             <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               진료 기록이 없습니다
@@ -188,65 +191,67 @@ export default function MedicalRecordsPage() {
                 진료 기록 작성하기
               </Button>
             </Link>
-          </div>
+          </FadeIn>
         ) : !error ? (
           <div className="space-y-4">
             {filteredRecords.map((record) => (
-              <Link key={record.id} href={`/dashboard/medical-records/${record.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge variant={getVisitTypeBadgeVariant(record.visitType)}>
-                            {getVisitTypeLabel(record.visitType)}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {formatDateTime(record.createdAt)}
-                          </span>
-                        </div>
+              <SlideUp key={record.id}>
+                <Link href={`/dashboard/medical-records/${record.id}`}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Badge variant={getVisitTypeBadgeVariant(record.visitType)}>
+                              {getVisitTypeLabel(record.visitType)}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {formatDateTime(record.createdAt)}
+                            </span>
+                          </div>
 
-                        <div className="flex items-center gap-4 mb-3">
-                          <div>
-                            <p className="font-semibold text-lg">
-                              {record.animal.name}
+                          <div className="flex items-center gap-4 mb-3">
+                            <div>
+                              <p className="font-semibold text-lg">
+                                {record.animal.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {record.animal.animalCode}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm">
+                              <span className="text-muted-foreground">주요 증상: </span>
+                              {record.chiefComplaint}
                             </p>
-                            <p className="text-sm text-muted-foreground">
-                              {record.animal.animalCode}
-                            </p>
+                            {record.diagnosis && (
+                              <p className="text-sm">
+                                <span className="text-muted-foreground">진단: </span>
+                                {record.diagnosis}
+                              </p>
+                            )}
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <p className="text-sm">
-                            <span className="text-muted-foreground">주요 증상: </span>
-                            {record.chiefComplaint}
-                          </p>
-                          {record.diagnosis && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">진단: </span>
-                              {record.diagnosis}
+                        <div className="text-right text-sm">
+                          <p className="text-muted-foreground">{record.hospital.name}</p>
+                          {record.veterinarian && (
+                            <p className="text-muted-foreground">
+                              담당: {record.veterinarian.name}
                             </p>
                           )}
                         </div>
                       </div>
-
-                      <div className="text-right text-sm">
-                        <p className="text-muted-foreground">{record.hospital.name}</p>
-                        {record.veterinarian && (
-                          <p className="text-muted-foreground">
-                            담당: {record.veterinarian.name}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </SlideUp>
             ))}
           </div>
         ) : null}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

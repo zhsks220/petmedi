@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/header';
 import { Input, Card, CardContent, Badge } from '@/components/ui';
 import { usersApi } from '@/lib/api';
 import { getRoleLabel, formatDate } from '@/lib/utils';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface User {
   id: string;
@@ -29,10 +30,15 @@ export default function UsersPage() {
     const fetchUsers = async () => {
       try {
         const response = await usersApi.getAll();
-        setUsers(response.data);
-        setFilteredUsers(response.data);
+        // API 응답이 페이지네이션 구조 { data: [], total, ... }일 수 있음
+        const userData = response.data?.data || response.data || [];
+        setUsers(userData);
+        setFilteredUsers(userData);
       } catch (error) {
         console.error('Failed to fetch users:', error);
+        // 에러 시 빈 배열로 초기화
+        setUsers([]);
+        setFilteredUsers([]);
       } finally {
         setIsLoading(false);
       }
@@ -78,9 +84,9 @@ export default function UsersPage() {
     <div className="flex flex-col h-full">
       <Header title="사용자 관리" />
 
-      <div className="flex-1 p-6 space-y-6">
+      <StaggerContainer className="flex-1 p-6 space-y-6">
         {/* Search Bar */}
-        <div className="relative max-w-md">
+        <FadeIn className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             type="search"
@@ -89,7 +95,7 @@ export default function UsersPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
           />
-        </div>
+        </FadeIn>
 
         {/* Users List */}
         {isLoading ? (
@@ -103,7 +109,7 @@ export default function UsersPage() {
             ))}
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="text-center py-12">
+          <FadeIn className="text-center py-12">
             <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               사용자가 없습니다
@@ -111,53 +117,55 @@ export default function UsersPage() {
             <p className="text-muted-foreground">
               검색 조건을 변경해 보세요
             </p>
-          </div>
+          </FadeIn>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.map((user) => (
-              <Card key={user.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-lg font-medium text-primary">
-                          {user.name.charAt(0)}
-                        </span>
+            {(filteredUsers || []).map((user) => (
+              <SlideUp key={user.id}>
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-lg font-medium text-primary">
+                            {user.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{user.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {user.hospital?.name || '소속 없음'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold">{user.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {user.hospital?.name || '소속 없음'}
-                        </p>
-                      </div>
+                      <Badge variant={getRoleBadgeVariant(user.role)}>
+                        {getRoleLabel(user.role)}
+                      </Badge>
                     </div>
-                    <Badge variant={getRoleBadgeVariant(user.role)}>
-                      {getRoleLabel(user.role)}
-                    </Badge>
-                  </div>
 
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="truncate">{user.email}</span>
-                    </div>
-                    {user.phone && (
+                    <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{user.phone}</span>
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{user.email}</span>
                       </div>
-                    )}
-                  </div>
+                      {user.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{user.phone}</span>
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
-                    가입일: {formatDate(user.createdAt)}
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+                      가입일: {formatDate(user.createdAt)}
+                    </div>
+                  </CardContent>
+                </Card>
+              </SlideUp>
             ))}
           </div>
         )}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

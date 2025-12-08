@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, TokenResponseDto, RefreshTokenDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -13,9 +14,11 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @Throttle({ short: { limit: 3, ttl: 60000 } }) // 분당 3회 회원가입 시도 제한
   @ApiOperation({ summary: '회원가입', description: '새로운 사용자 계정을 생성합니다' })
   @ApiResponse({ status: 201, description: '회원가입 성공', type: TokenResponseDto })
   @ApiResponse({ status: 409, description: '이미 등록된 이메일' })
+  @ApiResponse({ status: 429, description: '요청 횟수 초과' })
   async register(@Body() dto: RegisterDto): Promise<TokenResponseDto> {
     return this.authService.register(dto);
   }
@@ -23,9 +26,11 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ short: { limit: 5, ttl: 60000 } }) // 분당 5회 로그인 시도 제한 (Brute force 방지)
   @ApiOperation({ summary: '로그인', description: '이메일과 비밀번호로 로그인합니다' })
   @ApiResponse({ status: 200, description: '로그인 성공', type: TokenResponseDto })
   @ApiResponse({ status: 401, description: '인증 실패' })
+  @ApiResponse({ status: 429, description: '요청 횟수 초과' })
   async login(@Body() dto: LoginDto): Promise<TokenResponseDto> {
     return this.authService.login(dto);
   }
@@ -33,9 +38,11 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ short: { limit: 10, ttl: 60000 } }) // 분당 10회 토큰 갱신 제한
   @ApiOperation({ summary: '토큰 갱신', description: '리프레시 토큰으로 새로운 액세스 토큰을 발급받습니다' })
   @ApiResponse({ status: 200, description: '토큰 갱신 성공', type: TokenResponseDto })
   @ApiResponse({ status: 401, description: '유효하지 않은 토큰' })
+  @ApiResponse({ status: 429, description: '요청 횟수 초과' })
   async refreshToken(@Body() dto: RefreshTokenDto): Promise<TokenResponseDto> {
     return this.authService.refreshToken(dto.refreshToken);
   }

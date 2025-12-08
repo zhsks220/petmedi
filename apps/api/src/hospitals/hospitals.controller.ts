@@ -27,7 +27,7 @@ export class HospitalsController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles('VET', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'VET')
   @ApiOperation({ summary: '병원 등록', description: '새로운 병원을 등록합니다 (수의사/관리자만)' })
   @ApiResponse({ status: 201, description: '병원 등록 성공' })
   @ApiResponse({ status: 409, description: '중복된 사업자등록번호' })

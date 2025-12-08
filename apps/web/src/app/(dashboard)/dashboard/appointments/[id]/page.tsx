@@ -9,6 +9,7 @@ import { Button, Card, CardContent, Badge, Textarea } from '@/components/ui';
 import { appointmentsApi } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { AxiosError } from 'axios';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface AppointmentDetail {
   id: string;
@@ -186,21 +187,23 @@ export default function AppointmentDetailPage() {
         <Header title="예약 상세" />
         <div className="flex-1 p-6">
           <div className="max-w-3xl mx-auto">
-            <Card className="border-destructive">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-medium text-destructive">오류 발생</p>
-                    <p className="text-sm text-muted-foreground">{error || '예약을 찾을 수 없습니다.'}</p>
+            <FadeIn>
+              <Card className="border-destructive">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">오류 발생</p>
+                      <p className="text-sm text-muted-foreground">{error || '예약을 찾을 수 없습니다.'}</p>
+                    </div>
                   </div>
-                </div>
-                <Button variant="outline" className="mt-4" onClick={() => router.back()}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  뒤로 가기
-                </Button>
-              </CardContent>
-            </Card>
+                  <Button variant="outline" className="mt-4" onClick={() => router.back()}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    뒤로 가기
+                  </Button>
+                </CardContent>
+              </Card>
+            </FadeIn>
           </div>
         </div>
       </div>
@@ -211,300 +214,316 @@ export default function AppointmentDetailPage() {
     <div className="flex flex-col h-full">
       <Header title="예약 상세" />
 
-      <div className="flex-1 p-6">
+      <StaggerContainer className="flex-1 p-6">
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Back Button */}
-          <Button variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            뒤로 가기
-          </Button>
+          <FadeIn>
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              뒤로 가기
+            </Button>
+          </FadeIn>
 
           {/* Status & Actions Header */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className={`px-4 py-2 rounded-full text-lg font-medium ${statusColors[appointment.status]}`}>
-                    {statusLabels[appointment.status] || appointment.status}
-                  </span>
-                  <Badge variant="secondary">
-                    {typeLabels[appointment.type] || appointment.type}
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  {appointment.status === 'SCHEDULED' && (
-                    <>
-                      <Button onClick={() => handleStatusChange('CONFIRMED')} disabled={isUpdating}>
-                        확정
-                      </Button>
-                      <Button variant="destructive" onClick={() => setShowCancelDialog(true)} disabled={isUpdating}>
-                        취소
-                      </Button>
-                    </>
-                  )}
-                  {appointment.status === 'CONFIRMED' && (
-                    <>
-                      <Button onClick={() => handleStatusChange('CHECKED_IN')} disabled={isUpdating}>
-                        내원 확인
-                      </Button>
-                      <Button variant="outline" onClick={() => handleStatusChange('NO_SHOW')} disabled={isUpdating}>
-                        미방문
-                      </Button>
-                    </>
-                  )}
-                  {appointment.status === 'CHECKED_IN' && (
-                    <Button onClick={() => handleStatusChange('IN_PROGRESS')} disabled={isUpdating}>
-                      진료 시작
-                    </Button>
-                  )}
-                  {appointment.status === 'IN_PROGRESS' && (
-                    <Button onClick={() => handleStatusChange('COMPLETED')} disabled={isUpdating}>
-                      진료 완료
-                    </Button>
-                  )}
-                  {['SCHEDULED', 'CONFIRMED'].includes(appointment.status) && (
-                    <Button variant="ghost" size="sm" onClick={handleDelete}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Cancel Dialog */}
-              {showCancelDialog && (
-                <div className="mt-4 p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
-                  <p className="font-medium mb-2">예약 취소 사유</p>
-                  <Textarea
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                    placeholder="취소 사유를 입력해주세요..."
-                    rows={2}
-                  />
-                  <div className="flex justify-end gap-2 mt-3">
-                    <Button variant="outline" size="sm" onClick={() => setShowCancelDialog(false)}>
-                      취소
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleStatusChange('CANCELLED', cancelReason)}
-                      disabled={isUpdating}
-                    >
-                      예약 취소 확인
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Cancel Reason Display */}
-              {appointment.status === 'CANCELLED' && appointment.cancelReason && (
-                <div className="mt-4 p-4 bg-destructive/5 rounded-lg">
-                  <p className="text-sm text-muted-foreground">취소 사유</p>
-                  <p>{appointment.cancelReason}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Appointment Info */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                예약 정보
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">예약 날짜</p>
-                  <p className="font-medium">
-                    {new Date(appointment.appointmentDate).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      weekday: 'long',
-                    })}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">예약 시간</p>
-                  <p className="font-medium flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {appointment.startTime}
-                    {appointment.endTime && ` ~ ${appointment.endTime}`}
-                    <span className="text-muted-foreground">({appointment.duration}분)</span>
-                  </p>
-                </div>
-                {appointment.reason && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground">방문 사유</p>
-                    <p className="font-medium">{appointment.reason}</p>
-                  </div>
-                )}
-                {appointment.symptoms && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground">증상</p>
-                    <p className="whitespace-pre-wrap">{appointment.symptoms}</p>
-                  </div>
-                )}
-                {appointment.notes && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground">메모</p>
-                    <p className="whitespace-pre-wrap">{appointment.notes}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Patient Info */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <PawPrint className="h-5 w-5" />
-                환자 정보
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">이름</p>
-                  <Link href={`/dashboard/animals/${appointment.animal.id}`} className="font-medium text-primary hover:underline">
-                    {appointment.animal.name}
-                  </Link>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">코드</p>
-                  <p className="font-medium">{appointment.animal.animalCode}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">종류</p>
-                  <p className="font-medium">{speciesLabels[appointment.animal.species] || appointment.animal.species}</p>
-                </div>
-                {appointment.animal.breed && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">품종</p>
-                    <p className="font-medium">{appointment.animal.breed}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Guardian Info */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <User className="h-5 w-5" />
-                보호자 정보
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">이름</p>
-                  <p className="font-medium">{appointment.guardian.name}</p>
-                </div>
-                {appointment.guardian.phone && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">연락처</p>
-                    <p className="font-medium flex items-center gap-1">
-                      <Phone className="h-4 w-4" />
-                      {appointment.guardian.phone}
-                    </p>
-                  </div>
-                )}
-                {appointment.guardian.email && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">이메일</p>
-                    <p className="font-medium">{appointment.guardian.email}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Hospital & Vet Info */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                병원 정보
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">병원명</p>
-                  <p className="font-medium">{appointment.hospital.name}</p>
-                </div>
-                {appointment.hospital.phone && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">연락처</p>
-                    <p className="font-medium">{appointment.hospital.phone}</p>
-                  </div>
-                )}
-                {appointment.vet && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">담당 수의사</p>
-                    <p className="font-medium">{appointment.vet.name}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Timeline */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                처리 이력
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">예약 생성</span>
-                  <span>{formatDate(appointment.createdAt)}</span>
-                </div>
-                {appointment.checkedInAt && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">내원 확인</span>
-                    <span>{formatDate(appointment.checkedInAt)}</span>
-                  </div>
-                )}
-                {appointment.completedAt && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">진료 완료</span>
-                    <span>{formatDate(appointment.completedAt)}</span>
-                  </div>
-                )}
-                {appointment.cancelledAt && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">예약 취소</span>
-                    <span>{formatDate(appointment.cancelledAt)}</span>
-                  </div>
-                )}
-                {appointment.reminderSent && appointment.reminderSentAt && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">알림 발송</span>
-                    <span>{formatDate(appointment.reminderSentAt)}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          {appointment.status === 'COMPLETED' && (
+          <SlideUp>
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4">다음 단계</h3>
-                <div className="flex gap-4">
-                  <Link href={`/dashboard/medical-records/new?animalId=${appointment.animal.id}&appointmentId=${appointment.id}`}>
-                    <Button>진료 기록 작성</Button>
-                  </Link>
-                  <Link href={`/dashboard/appointments/new?animalId=${appointment.animal.id}`}>
-                    <Button variant="outline">재진 예약</Button>
-                  </Link>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className={`px-4 py-2 rounded-full text-lg font-medium ${statusColors[appointment.status]}`}>
+                      {statusLabels[appointment.status] || appointment.status}
+                    </span>
+                    <Badge variant="secondary">
+                      {typeLabels[appointment.type] || appointment.type}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    {appointment.status === 'SCHEDULED' && (
+                      <>
+                        <Button onClick={() => handleStatusChange('CONFIRMED')} disabled={isUpdating}>
+                          확정
+                        </Button>
+                        <Button variant="destructive" onClick={() => setShowCancelDialog(true)} disabled={isUpdating}>
+                          취소
+                        </Button>
+                      </>
+                    )}
+                    {appointment.status === 'CONFIRMED' && (
+                      <>
+                        <Button onClick={() => handleStatusChange('CHECKED_IN')} disabled={isUpdating}>
+                          내원 확인
+                        </Button>
+                        <Button variant="outline" onClick={() => handleStatusChange('NO_SHOW')} disabled={isUpdating}>
+                          미방문
+                        </Button>
+                      </>
+                    )}
+                    {appointment.status === 'CHECKED_IN' && (
+                      <Button onClick={() => handleStatusChange('IN_PROGRESS')} disabled={isUpdating}>
+                        진료 시작
+                      </Button>
+                    )}
+                    {appointment.status === 'IN_PROGRESS' && (
+                      <Button onClick={() => handleStatusChange('COMPLETED')} disabled={isUpdating}>
+                        진료 완료
+                      </Button>
+                    )}
+                    {['SCHEDULED', 'CONFIRMED'].includes(appointment.status) && (
+                      <Button variant="ghost" size="sm" onClick={handleDelete}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Cancel Dialog */}
+                {showCancelDialog && (
+                  <div className="mt-4 p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
+                    <p className="font-medium mb-2">예약 취소 사유</p>
+                    <Textarea
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      placeholder="취소 사유를 입력해주세요..."
+                      rows={2}
+                    />
+                    <div className="flex justify-end gap-2 mt-3">
+                      <Button variant="outline" size="sm" onClick={() => setShowCancelDialog(false)}>
+                        취소
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleStatusChange('CANCELLED', cancelReason)}
+                        disabled={isUpdating}
+                      >
+                        예약 취소 확인
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cancel Reason Display */}
+                {appointment.status === 'CANCELLED' && appointment.cancelReason && (
+                  <div className="mt-4 p-4 bg-destructive/5 rounded-lg">
+                    <p className="text-sm text-muted-foreground">취소 사유</p>
+                    <p>{appointment.cancelReason}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Appointment Info */}
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  예약 정보
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">예약 날짜</p>
+                    <p className="font-medium">
+                      {new Date(appointment.appointmentDate).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'long',
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">예약 시간</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {appointment.startTime}
+                      {appointment.endTime && ` ~ ${appointment.endTime}`}
+                      <span className="text-muted-foreground">({appointment.duration}분)</span>
+                    </p>
+                  </div>
+                  {appointment.reason && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-muted-foreground">방문 사유</p>
+                      <p className="font-medium">{appointment.reason}</p>
+                    </div>
+                  )}
+                  {appointment.symptoms && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-muted-foreground">증상</p>
+                      <p className="whitespace-pre-wrap">{appointment.symptoms}</p>
+                    </div>
+                  )}
+                  {appointment.notes && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-muted-foreground">메모</p>
+                      <p className="whitespace-pre-wrap">{appointment.notes}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
+          </SlideUp>
+
+          {/* Patient Info */}
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <PawPrint className="h-5 w-5" />
+                  환자 정보
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">이름</p>
+                    <Link href={`/dashboard/animals/${appointment.animal.id}`} className="font-medium text-primary hover:underline">
+                      {appointment.animal.name}
+                    </Link>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">코드</p>
+                    <p className="font-medium">{appointment.animal.animalCode}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">종류</p>
+                    <p className="font-medium">{speciesLabels[appointment.animal.species] || appointment.animal.species}</p>
+                  </div>
+                  {appointment.animal.breed && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">품종</p>
+                      <p className="font-medium">{appointment.animal.breed}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Guardian Info */}
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  보호자 정보
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">이름</p>
+                    <p className="font-medium">{appointment.guardian.name}</p>
+                  </div>
+                  {appointment.guardian.phone && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">연락처</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <Phone className="h-4 w-4" />
+                        {appointment.guardian.phone}
+                      </p>
+                    </div>
+                  )}
+                  {appointment.guardian.email && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">이메일</p>
+                      <p className="font-medium">{appointment.guardian.email}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Hospital & Vet Info */}
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  병원 정보
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">병원명</p>
+                    <p className="font-medium">{appointment.hospital.name}</p>
+                  </div>
+                  {appointment.hospital.phone && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">연락처</p>
+                      <p className="font-medium">{appointment.hospital.phone}</p>
+                    </div>
+                  )}
+                  {appointment.vet && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">담당 수의사</p>
+                      <p className="font-medium">{appointment.vet.name}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Timeline */}
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  처리 이력
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">예약 생성</span>
+                    <span>{formatDate(appointment.createdAt)}</span>
+                  </div>
+                  {appointment.checkedInAt && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">내원 확인</span>
+                      <span>{formatDate(appointment.checkedInAt)}</span>
+                    </div>
+                  )}
+                  {appointment.completedAt && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">진료 완료</span>
+                      <span>{formatDate(appointment.completedAt)}</span>
+                    </div>
+                  )}
+                  {appointment.cancelledAt && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">예약 취소</span>
+                      <span>{formatDate(appointment.cancelledAt)}</span>
+                    </div>
+                  )}
+                  {appointment.reminderSent && appointment.reminderSentAt && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">알림 발송</span>
+                      <span>{formatDate(appointment.reminderSentAt)}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Quick Actions */}
+          {appointment.status === 'COMPLETED' && (
+            <SlideUp>
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-lg mb-4">다음 단계</h3>
+                  <div className="flex gap-4">
+                    <Link href={`/dashboard/medical-records/new?animalId=${appointment.animal.id}&appointmentId=${appointment.id}`}>
+                      <Button>진료 기록 작성</Button>
+                    </Link>
+                    <Link href={`/dashboard/appointments/new?animalId=${appointment.animal.id}`}>
+                      <Button variant="outline">재진 예약</Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </SlideUp>
           )}
         </div>
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

@@ -13,12 +13,18 @@ import { RolesGuard } from './guards/roles.guard';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'petmedi-jwt-secret',
-        signOptions: {
-          expiresIn: '15m',
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('JWT_SECRET 환경변수가 설정되지 않았습니다');
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: '15m',
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

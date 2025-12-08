@@ -26,7 +26,7 @@ export class UsersController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @Roles('SUPER_ADMIN')
   @ApiOperation({ summary: '사용자 목록 (관리자)', description: '모든 사용자 목록을 조회합니다' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -74,7 +74,7 @@ export class UsersController {
 
   @Put(':id/admin')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @Roles('SUPER_ADMIN')
   @ApiOperation({ summary: '사용자 수정 (관리자)', description: '관리자가 사용자 정보를 수정합니다' })
   @ApiResponse({ status: 200, description: '사용자 수정 성공', type: UserResponseDto })
   @ApiResponse({ status: 404, description: '사용자 없음' })
@@ -84,7 +84,7 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @Roles('SUPER_ADMIN')
   @ApiOperation({ summary: '사용자 삭제 (관리자)', description: '사용자를 비활성화합니다' })
   @ApiResponse({ status: 200, description: '사용자 삭제 성공' })
   @ApiResponse({ status: 404, description: '사용자 없음' })

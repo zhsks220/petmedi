@@ -8,6 +8,7 @@ import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/compone
 import { appointmentsApi } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { AxiosError } from 'axios';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface Appointment {
   id: string;
@@ -143,9 +144,9 @@ export default function AppointmentsPage() {
     <div className="flex flex-col h-full">
       <Header title="예약 관리" />
 
-      <div className="flex-1 p-6 space-y-6">
+      <StaggerContainer className="flex-1 p-6 space-y-6">
         {/* Date Navigation */}
-        <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm">
+        <FadeIn className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm">
           <Button variant="outline" size="sm" onClick={() => navigateDate(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -171,10 +172,10 @@ export default function AppointmentsPage() {
           <Button variant="outline" size="sm" onClick={() => navigateDate(1)}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-        </div>
+        </FadeIn>
 
         {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="flex flex-1 gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -207,27 +208,29 @@ export default function AppointmentsPage() {
               예약 등록
             </Button>
           </Link>
-        </div>
+        </FadeIn>
 
         {/* Error State */}
         {error && (
-          <Card className="border-destructive bg-destructive/5">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-medium text-destructive">오류 발생</p>
-                    <p className="text-sm text-muted-foreground">{error}</p>
+          <FadeIn>
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">오류 발생</p>
+                      <p className="text-sm text-muted-foreground">{error}</p>
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={fetchAppointments}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    다시 시도
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchAppointments}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  다시 시도
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </FadeIn>
         )}
 
         {/* Appointments List */}
@@ -242,7 +245,7 @@ export default function AppointmentsPage() {
             ))}
           </div>
         ) : !error && filteredAppointments.length === 0 ? (
-          <div className="text-center py-12">
+          <FadeIn className="text-center py-12">
             <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               예약이 없습니다
@@ -256,126 +259,128 @@ export default function AppointmentsPage() {
                 예약 등록하기
               </Button>
             </Link>
-          </div>
+          </FadeIn>
         ) : !error ? (
           <div className="space-y-4">
             {filteredAppointments
               .sort((a, b) => a.startTime.localeCompare(b.startTime))
               .map((appointment) => (
-                <Card key={appointment.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        {/* Time */}
-                        <div className="text-center min-w-[80px]">
-                          <div className="flex items-center gap-1 text-lg font-semibold">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            {appointment.startTime}
+                <SlideUp key={appointment.id}>
+                  <Card className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          {/* Time */}
+                          <div className="text-center min-w-[80px]">
+                            <div className="flex items-center gap-1 text-lg font-semibold">
+                              <Clock className="h-4 w-4 text-gray-400" />
+                              {appointment.startTime}
+                            </div>
+                            {appointment.endTime && (
+                              <div className="text-sm text-muted-foreground">
+                                ~ {appointment.endTime}
+                              </div>
+                            )}
+                            <div className="text-xs text-muted-foreground">
+                              {appointment.duration}분
+                            </div>
                           </div>
-                          {appointment.endTime && (
-                            <div className="text-sm text-muted-foreground">
-                              ~ {appointment.endTime}
+
+                          {/* Divider */}
+                          <div className="h-16 w-px bg-gray-200" />
+
+                          {/* Patient Info */}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-lg">{appointment.animal.name}</h3>
+                              <Badge variant="secondary">
+                                {typeLabels[appointment.type] || appointment.type}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {appointment.animal.animalCode} · 보호자: {appointment.guardian.name}
+                              {appointment.guardian.phone && ` (${appointment.guardian.phone})`}
+                            </p>
+                            {appointment.reason && (
+                              <p className="text-sm mt-1">
+                                <span className="text-muted-foreground">방문 사유:</span> {appointment.reason}
+                              </p>
+                            )}
+                            {appointment.vet && (
+                              <p className="text-sm text-muted-foreground">
+                                담당 수의사: {appointment.vet.name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Status & Actions */}
+                        <div className="flex items-center gap-4">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[appointment.status]}`}>
+                            {statusLabels[appointment.status] || appointment.status}
+                          </span>
+
+                          {/* Quick Actions */}
+                          {appointment.status === 'SCHEDULED' && (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleStatusChange(appointment.id, 'CONFIRMED')}
+                              >
+                                확정
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleStatusChange(appointment.id, 'CANCELLED')}
+                              >
+                                취소
+                              </Button>
                             </div>
                           )}
-                          <div className="text-xs text-muted-foreground">
-                            {appointment.duration}분
-                          </div>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="h-16 w-px bg-gray-200" />
-
-                        {/* Patient Info */}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-lg">{appointment.animal.name}</h3>
-                            <Badge variant="secondary">
-                              {typeLabels[appointment.type] || appointment.type}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {appointment.animal.animalCode} · 보호자: {appointment.guardian.name}
-                            {appointment.guardian.phone && ` (${appointment.guardian.phone})`}
-                          </p>
-                          {appointment.reason && (
-                            <p className="text-sm mt-1">
-                              <span className="text-muted-foreground">방문 사유:</span> {appointment.reason}
-                            </p>
-                          )}
-                          {appointment.vet && (
-                            <p className="text-sm text-muted-foreground">
-                              담당 수의사: {appointment.vet.name}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Status & Actions */}
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[appointment.status]}`}>
-                          {statusLabels[appointment.status] || appointment.status}
-                        </span>
-
-                        {/* Quick Actions */}
-                        {appointment.status === 'SCHEDULED' && (
-                          <div className="flex gap-2">
+                          {appointment.status === 'CONFIRMED' && (
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => handleStatusChange(appointment.id, 'CONFIRMED')}
+                              onClick={() => handleStatusChange(appointment.id, 'CHECKED_IN')}
                             >
-                              확정
+                              내원 확인
                             </Button>
+                          )}
+                          {appointment.status === 'CHECKED_IN' && (
                             <Button
                               size="sm"
-                              variant="destructive"
-                              onClick={() => handleStatusChange(appointment.id, 'CANCELLED')}
+                              onClick={() => handleStatusChange(appointment.id, 'IN_PROGRESS')}
                             >
-                              취소
+                              진료 시작
                             </Button>
-                          </div>
-                        )}
-                        {appointment.status === 'CONFIRMED' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleStatusChange(appointment.id, 'CHECKED_IN')}
-                          >
-                            내원 확인
-                          </Button>
-                        )}
-                        {appointment.status === 'CHECKED_IN' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleStatusChange(appointment.id, 'IN_PROGRESS')}
-                          >
-                            진료 시작
-                          </Button>
-                        )}
-                        {appointment.status === 'IN_PROGRESS' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleStatusChange(appointment.id, 'COMPLETED')}
-                          >
-                            진료 완료
-                          </Button>
-                        )}
+                          )}
+                          {appointment.status === 'IN_PROGRESS' && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleStatusChange(appointment.id, 'COMPLETED')}
+                            >
+                              진료 완료
+                            </Button>
+                          )}
 
-                        <Link href={`/dashboard/appointments/${appointment.id}`}>
-                          <Button variant="outline" size="sm">
-                            상세보기
-                          </Button>
-                        </Link>
+                          <Link href={`/dashboard/appointments/${appointment.id}`}>
+                            <Button variant="outline" size="sm">
+                              상세보기
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </SlideUp>
               ))}
           </div>
         ) : null}
 
         {/* Summary Stats */}
         {!isLoading && !error && appointments.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mt-6">
+          <SlideUp delay={0.2} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mt-6">
             {Object.entries(statusLabels).map(([status, label]) => {
               const count = appointments.filter((a) => a.status === status).length;
               return (
@@ -389,9 +394,9 @@ export default function AppointmentsPage() {
                 </Card>
               );
             })}
-          </div>
+          </SlideUp>
         )}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

@@ -25,6 +25,7 @@ export class RolesGuard implements CanActivate {
     const hasRole = requiredRoles.some((role) => user.role === role);
 
     if (!hasRole) {
+      console.log(`[RolesGuard] Access denied - User role: "${user.role}", Required roles: [${requiredRoles.join(', ')}]`);
       throw new ForbiddenException('접근 권한이 없습니다');
     }
 

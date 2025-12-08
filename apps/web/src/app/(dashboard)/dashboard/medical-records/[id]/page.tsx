@@ -15,6 +15,7 @@ import {
 } from '@/components/ui';
 import { medicalRecordsApi } from '@/lib/api';
 import { getVisitTypeLabel, formatDate, formatDateTime } from '@/lib/utils';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface MedicalRecord {
   id: string;
@@ -106,15 +107,17 @@ export default function MedicalRecordDetailPage() {
       <div className="flex flex-col h-full">
         <Header title="진료 기록 상세" />
         <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="text-center">
-            <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <p className="text-muted-foreground">진료 기록을 찾을 수 없습니다</p>
-            <Link href="/dashboard/medical-records">
-              <Button variant="outline" className="mt-4">
-                목록으로 돌아가기
-              </Button>
-            </Link>
-          </div>
+          <FadeIn>
+            <div className="text-center">
+              <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-muted-foreground">진료 기록을 찾을 수 없습니다</p>
+              <Link href="/dashboard/medical-records">
+                <Button variant="outline" className="mt-4">
+                  목록으로 돌아가기
+                </Button>
+              </Link>
+            </div>
+          </FadeIn>
         </div>
       </div>
     );
@@ -139,228 +142,242 @@ export default function MedicalRecordDetailPage() {
     <div className="flex flex-col h-full">
       <Header title="진료 기록 상세" />
 
-      <div className="flex-1 p-6">
+      <StaggerContainer className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <Link
-              href="/dashboard/medical-records"
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              진료 기록 목록으로 돌아가기
-            </Link>
-            <div className="flex gap-2">
-              <Link href={`/dashboard/medical-records/${record.id}/edit`}>
-                <Button variant="outline" size="sm">
-                  <Edit className="h-4 w-4 mr-2" />
-                  수정
-                </Button>
-              </Link>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isDeleting}
+          <FadeIn>
+            <div className="flex items-center justify-between mb-6">
+              <Link
+                href="/dashboard/medical-records"
+                className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                삭제
-              </Button>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                진료 기록 목록으로 돌아가기
+              </Link>
+              <div className="flex gap-2">
+                <Link href={`/dashboard/medical-records/${record.id}/edit`}>
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" />
+                    수정
+                  </Button>
+                </Link>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  삭제
+                </Button>
+              </div>
             </div>
-          </div>
+          </FadeIn>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Header Card */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <Badge variant={getVisitTypeBadgeVariant(record.visitType)}>
-                          {getVisitTypeLabel(record.visitType)}
-                        </Badge>
+              <SlideUp>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <Badge variant={getVisitTypeBadgeVariant(record.visitType)}>
+                            {getVisitTypeLabel(record.visitType)}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-2xl">진료 기록</CardTitle>
+                        <p className="text-muted-foreground mt-1">
+                          {formatDateTime(record.createdAt)}
+                        </p>
                       </div>
-                      <CardTitle className="text-2xl">진료 기록</CardTitle>
-                      <p className="text-muted-foreground mt-1">
-                        {formatDateTime(record.createdAt)}
-                      </p>
                     </div>
-                  </div>
-                </CardHeader>
-              </Card>
+                  </CardHeader>
+                </Card>
+              </SlideUp>
 
               {/* Medical Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>진료 내용</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                      주요 증상 / 내원 사유
-                    </h4>
-                    <p className="whitespace-pre-wrap">{record.chiefComplaint}</p>
-                  </div>
-
-                  {record.symptoms && (
+              <SlideUp>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>진료 내용</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                        세부 증상
+                        주요 증상 / 내원 사유
                       </h4>
-                      <p className="whitespace-pre-wrap">{record.symptoms}</p>
+                      <p className="whitespace-pre-wrap">{record.chiefComplaint}</p>
                     </div>
-                  )}
 
-                  {record.diagnosis && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                        진단
-                      </h4>
-                      <p className="whitespace-pre-wrap">{record.diagnosis}</p>
-                    </div>
-                  )}
+                    {record.symptoms && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                          세부 증상
+                        </h4>
+                        <p className="whitespace-pre-wrap">{record.symptoms}</p>
+                      </div>
+                    )}
 
-                  {record.treatment && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                        치료 내용
-                      </h4>
-                      <p className="whitespace-pre-wrap">{record.treatment}</p>
-                    </div>
-                  )}
+                    {record.diagnosis && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                          진단
+                        </h4>
+                        <p className="whitespace-pre-wrap">{record.diagnosis}</p>
+                      </div>
+                    )}
 
-                  {record.prescription && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                        처방
-                      </h4>
-                      <p className="whitespace-pre-wrap">{record.prescription}</p>
-                    </div>
-                  )}
+                    {record.treatment && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                          치료 내용
+                        </h4>
+                        <p className="whitespace-pre-wrap">{record.treatment}</p>
+                      </div>
+                    )}
 
-                  {record.notes && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                        비고
-                      </h4>
-                      <p className="whitespace-pre-wrap">{record.notes}</p>
-                    </div>
-                  )}
+                    {record.prescription && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                          처방
+                        </h4>
+                        <p className="whitespace-pre-wrap">{record.prescription}</p>
+                      </div>
+                    )}
 
-                  {record.nextVisitDate && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                        다음 방문 예정일
-                      </h4>
-                      <p>{formatDate(record.nextVisitDate)}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    {record.notes && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                          비고
+                        </h4>
+                        <p className="whitespace-pre-wrap">{record.notes}</p>
+                      </div>
+                    )}
+
+                    {record.nextVisitDate && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                          다음 방문 예정일
+                        </h4>
+                        <p>{formatDate(record.nextVisitDate)}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </SlideUp>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Patient Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <PawPrint className="h-5 w-5" />
-                    환자 정보
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">이름</p>
-                      <p className="font-medium">{record.animal.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">고유 코드</p>
-                      <p className="font-mono">{record.animal.animalCode}</p>
-                    </div>
-                    {record.animal.breed && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">품종</p>
-                        <p>{record.animal.breed}</p>
-                      </div>
-                    )}
-                    <Link
-                      href={`/dashboard/animals/${record.animal.id}`}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      환자 상세 보기 →
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Hospital Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    병원 정보
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">병원명</p>
-                      <p className="font-medium">{record.hospital.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">주소</p>
-                      <p className="text-sm">{record.hospital.address}</p>
-                    </div>
-                    <Link
-                      href={`/dashboard/hospitals/${record.hospital.id}`}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      병원 상세 보기 →
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Veterinarian Info */}
-              {record.veterinarian && (
+              <SlideUp>
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <User className="h-5 w-5" />
-                      담당 수의사
+                      <PawPrint className="h-5 w-5" />
+                      환자 정보
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="font-medium">{record.veterinarian.name}</p>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">이름</p>
+                        <p className="font-medium">{record.animal.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">고유 코드</p>
+                        <p className="font-mono">{record.animal.animalCode}</p>
+                      </div>
+                      {record.animal.breed && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">품종</p>
+                          <p>{record.animal.breed}</p>
+                        </div>
+                      )}
+                      <Link
+                        href={`/dashboard/animals/${record.animal.id}`}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        환자 상세 보기 →
+                      </Link>
+                    </div>
                   </CardContent>
                 </Card>
+              </SlideUp>
+
+              {/* Hospital Info */}
+              <SlideUp>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      병원 정보
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">병원명</p>
+                        <p className="font-medium">{record.hospital.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">주소</p>
+                        <p className="text-sm">{record.hospital.address}</p>
+                      </div>
+                      <Link
+                        href={`/dashboard/hospitals/${record.hospital.id}`}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        병원 상세 보기 →
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </SlideUp>
+
+              {/* Veterinarian Info */}
+              {record.veterinarian && (
+                <SlideUp>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        담당 수의사
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="font-medium">{record.veterinarian.name}</p>
+                    </CardContent>
+                  </Card>
+                </SlideUp>
               )}
 
               {/* Record Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">기록 정보</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">작성일</span>
-                      <span>{formatDateTime(record.createdAt)}</span>
+              <SlideUp>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">기록 정보</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">작성일</span>
+                        <span>{formatDateTime(record.createdAt)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">최종 수정</span>
+                        <span>{formatDateTime(record.updatedAt)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">최종 수정</span>
-                      <span>{formatDateTime(record.updatedAt)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </SlideUp>
             </div>
           </div>
         </div>
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

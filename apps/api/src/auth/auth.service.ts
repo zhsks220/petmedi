@@ -104,8 +104,12 @@ export class AuthService {
 
   async refreshToken(refreshToken: string): Promise<TokenResponseDto> {
     try {
+      const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+      if (!refreshSecret) {
+        throw new Error('JWT_REFRESH_SECRET 환경변수가 설정되지 않았습니다');
+      }
       const payload = this.jwtService.verify<JwtPayload>(refreshToken, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'petmedi-refresh-secret',
+        secret: refreshSecret,
       });
 
       const user = await this.prisma.user.findUnique({
@@ -156,6 +160,13 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, email: string, role: UserRole) {
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+
+    if (!jwtSecret || !refreshSecret) {
+      throw new Error('JWT_SECRET 또는 JWT_REFRESH_SECRET 환경변수가 설정되지 않았습니다');
+    }
+
     const payload: JwtPayload = {
       sub: userId,
       email,
@@ -164,11 +175,11 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_SECRET') || 'petmedi-jwt-secret',
+        secret: jwtSecret,
         expiresIn: '15m',
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'petmedi-refresh-secret',
+        secret: refreshSecret,
         expiresIn: '7d',
       }),
     ]);

@@ -19,6 +19,7 @@ import { Button, Input, Card, CardContent, NativeSelect, Textarea, Badge } from 
 import { inventoryApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AxiosError } from 'axios';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface Product {
   id: string;
@@ -318,16 +319,18 @@ export default function ProductDetailPage() {
       <div className="flex flex-col h-full">
         <Header title="제품 상세" />
         <div className="flex-1 p-6">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
-              <h2 className="text-lg font-semibold mb-2">제품을 찾을 수 없습니다</h2>
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <Link href="/dashboard/inventory">
-                <Button>목록으로 돌아가기</Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <FadeIn>
+            <Card>
+              <CardContent className="p-6 text-center">
+                <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
+                <h2 className="text-lg font-semibold mb-2">제품을 찾을 수 없습니다</h2>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Link href="/dashboard/inventory">
+                  <Button>목록으로 돌아가기</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </FadeIn>
         </div>
       </div>
     );
@@ -338,357 +341,365 @@ export default function ProductDetailPage() {
     totalStock === 0
       ? { label: '재고없음', color: 'bg-red-100 text-red-800' }
       : totalStock <= product.reorderPoint
-      ? { label: '부족', color: 'bg-yellow-100 text-yellow-800' }
-      : { label: '정상', color: 'bg-green-100 text-green-800' };
+        ? { label: '부족', color: 'bg-yellow-100 text-yellow-800' }
+        : { label: '정상', color: 'bg-green-100 text-green-800' };
 
   return (
     <div className="flex flex-col h-full">
       <Header title="제품 상세" />
 
-      <div className="flex-1 p-6">
+      <StaggerContainer className="flex-1 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Back Button */}
-          <Link
-            href="/dashboard/inventory"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            재고 목록으로 돌아가기
-          </Link>
+          <FadeIn>
+            <Link
+              href="/dashboard/inventory"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              재고 목록으로 돌아가기
+            </Link>
+          </FadeIn>
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              {error}
-            </div>
+            <FadeIn>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                {error}
+              </div>
+            </FadeIn>
           )}
 
           {/* Product Info Card */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Package className="h-8 w-8 text-gray-500" />
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-16 w-16 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <Package className="h-8 w-8 text-gray-500" />
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold">{product.name}</h1>
+                      <p className="text-muted-foreground">
+                        {product.barcode && `바코드: ${product.barcode}`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h1 className="text-2xl font-bold">{product.name}</h1>
-                    <p className="text-muted-foreground">
-                      {product.barcode && `바코드: ${product.barcode}`}
+                  <div className="flex gap-2">
+                    {!isEditing ? (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                          <Edit2 className="h-4 w-4 mr-1" />
+                          수정
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={handleDelete}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          삭제
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+                          취소
+                        </Button>
+                        <Button size="sm" onClick={handleSubmit} disabled={isSubmitting}>
+                          <Save className="h-4 w-4 mr-1" />
+                          저장
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {isEditing ? (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">제품명 *</label>
+                        <Input
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">바코드</label>
+                        <Input
+                          name="barcode"
+                          value={formData.barcode}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">단위 *</label>
+                        <Input
+                          name="unit"
+                          value={formData.unit}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">제품 유형</label>
+                        <NativeSelect name="type" value={formData.type} onChange={handleChange}>
+                          <option value="MEDICATION">약품</option>
+                          <option value="VACCINE">백신</option>
+                          <option value="SUPPLY">소모품</option>
+                          <option value="EQUIPMENT">장비</option>
+                          <option value="FOOD">사료</option>
+                          <option value="OTHER">기타</option>
+                        </NativeSelect>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">카테고리</label>
+                        <NativeSelect
+                          name="categoryId"
+                          value={formData.categoryId}
+                          onChange={handleChange}
+                        >
+                          <option value="">선택 안함</option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">원가</label>
+                        <Input
+                          type="number"
+                          name="costPrice"
+                          value={formData.costPrice}
+                          onChange={handleChange}
+                          min="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">판매가 *</label>
+                        <Input
+                          type="number"
+                          name="sellingPrice"
+                          value={formData.sellingPrice}
+                          onChange={handleChange}
+                          min="0"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">재주문 기준</label>
+                        <Input
+                          type="number"
+                          name="reorderPoint"
+                          value={formData.reorderPoint}
+                          onChange={handleChange}
+                          min="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">기본 주문 수량</label>
+                        <Input
+                          type="number"
+                          name="reorderQuantity"
+                          value={formData.reorderQuantity}
+                          onChange={handleChange}
+                          min="1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">설명</label>
+                      <Textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows={3}
+                      />
+                    </div>
+                  </form>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">유형</h3>
+                      <Badge variant="secondary">
+                        {productTypeLabels[product.type] || product.type}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">카테고리</h3>
+                      <p>{product.category?.name || '-'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">공급업체</h3>
+                      <p>{product.supplier?.name || '-'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">원가</h3>
+                      <p>{product.costPrice ? formatCurrency(product.costPrice) : '-'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">판매가</h3>
+                      <p className="font-semibold">{formatCurrency(product.sellingPrice)}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">단위</h3>
+                      <p>{product.unit}</p>
+                    </div>
+                    {product.description && (
+                      <div className="col-span-3">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">설명</h3>
+                        <p className="text-sm">{product.description}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Stock Status Card */}
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">재고 현황</h2>
+                  <Button onClick={() => setShowAdjustModal(true)}>
+                    재고 조정
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">현재 재고</p>
+                    <p className="text-3xl font-bold">
+                      {totalStock} <span className="text-lg font-normal">{product.unit}</span>
+                    </p>
+                    <span className={`inline-flex mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${stockStatus.color}`}>
+                      {stockStatus.label}
+                    </span>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">재주문 기준</p>
+                    <p className="text-2xl font-semibold">{product.reorderPoint} {product.unit}</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">기본 주문 수량</p>
+                    <p className="text-2xl font-semibold">{product.reorderQuantity} {product.unit}</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">재고 가치</p>
+                    <p className="text-2xl font-semibold">
+                      {formatCurrency(totalStock * (product.costPrice || product.sellingPrice))}
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  {!isEditing ? (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                        <Edit2 className="h-4 w-4 mr-1" />
-                        수정
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={handleDelete}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        삭제
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                        취소
-                      </Button>
-                      <Button size="sm" onClick={handleSubmit} disabled={isSubmitting}>
-                        <Save className="h-4 w-4 mr-1" />
-                        저장
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
 
-              {isEditing ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Stock Lots */}
+                {product.stocks && product.stocks.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-sm font-medium mb-3">재고 로트</h3>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">제품명 *</label>
-                      <Input
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">바코드</label>
-                      <Input
-                        name="barcode"
-                        value={formData.barcode}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">단위 *</label>
-                      <Input
-                        name="unit"
-                        value={formData.unit}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">제품 유형</label>
-                      <NativeSelect name="type" value={formData.type} onChange={handleChange}>
-                        <option value="MEDICATION">약품</option>
-                        <option value="VACCINE">백신</option>
-                        <option value="SUPPLY">소모품</option>
-                        <option value="EQUIPMENT">장비</option>
-                        <option value="FOOD">사료</option>
-                        <option value="OTHER">기타</option>
-                      </NativeSelect>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">카테고리</label>
-                      <NativeSelect
-                        name="categoryId"
-                        value={formData.categoryId}
-                        onChange={handleChange}
-                      >
-                        <option value="">선택 안함</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </NativeSelect>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">원가</label>
-                      <Input
-                        type="number"
-                        name="costPrice"
-                        value={formData.costPrice}
-                        onChange={handleChange}
-                        min="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">판매가 *</label>
-                      <Input
-                        type="number"
-                        name="sellingPrice"
-                        value={formData.sellingPrice}
-                        onChange={handleChange}
-                        min="0"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">재주문 기준</label>
-                      <Input
-                        type="number"
-                        name="reorderPoint"
-                        value={formData.reorderPoint}
-                        onChange={handleChange}
-                        min="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">기본 주문 수량</label>
-                      <Input
-                        type="number"
-                        name="reorderQuantity"
-                        value={formData.reorderQuantity}
-                        onChange={handleChange}
-                        min="1"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">설명</label>
-                    <Textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows={3}
-                    />
-                  </div>
-                </form>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">유형</h3>
-                    <Badge variant="secondary">
-                      {productTypeLabels[product.type] || product.type}
-                    </Badge>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">카테고리</h3>
-                    <p>{product.category?.name || '-'}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">공급업체</h3>
-                    <p>{product.supplier?.name || '-'}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">원가</h3>
-                    <p>{product.costPrice ? formatCurrency(product.costPrice) : '-'}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">판매가</h3>
-                    <p className="font-semibold">{formatCurrency(product.sellingPrice)}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">단위</h3>
-                    <p>{product.unit}</p>
-                  </div>
-                  {product.description && (
-                    <div className="col-span-3">
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">설명</h3>
-                      <p className="text-sm">{product.description}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Stock Status Card */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">재고 현황</h2>
-                <Button onClick={() => setShowAdjustModal(true)}>
-                  재고 조정
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">현재 재고</p>
-                  <p className="text-3xl font-bold">
-                    {totalStock} <span className="text-lg font-normal">{product.unit}</span>
-                  </p>
-                  <span className={`inline-flex mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${stockStatus.color}`}>
-                    {stockStatus.label}
-                  </span>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">재주문 기준</p>
-                  <p className="text-2xl font-semibold">{product.reorderPoint} {product.unit}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">기본 주문 수량</p>
-                  <p className="text-2xl font-semibold">{product.reorderQuantity} {product.unit}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">재고 가치</p>
-                  <p className="text-2xl font-semibold">
-                    {formatCurrency(totalStock * (product.costPrice || product.sellingPrice))}
-                  </p>
-                </div>
-              </div>
-
-              {/* Stock Lots */}
-              {product.stocks && product.stocks.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-medium mb-3">재고 로트</h3>
-                  <div className="space-y-2">
-                    {product.stocks.map((stock) => (
-                      <div
-                        key={stock.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div>
-                          <span className="font-medium">{stock.quantity} {product.unit}</span>
-                          {stock.lotNumber && (
-                            <span className="text-sm text-muted-foreground ml-2">
-                              (로트: {stock.lotNumber})
+                      {product.stocks.map((stock) => (
+                        <div
+                          key={stock.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div>
+                            <span className="font-medium">{stock.quantity} {product.unit}</span>
+                            {stock.lotNumber && (
+                              <span className="text-sm text-muted-foreground ml-2">
+                                (로트: {stock.lotNumber})
+                              </span>
+                            )}
+                          </div>
+                          {stock.expirationDate && (
+                            <span className="text-sm text-muted-foreground">
+                              유통기한: {formatDate(stock.expirationDate)}
                             </span>
                           )}
                         </div>
-                        {stock.expirationDate && (
-                          <span className="text-sm text-muted-foreground">
-                            유통기한: {formatDate(stock.expirationDate)}
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </SlideUp>
+
+          {/* Recent Transactions */}
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <History className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold">최근 재고 변동</h2>
+                </div>
+
+                {transactions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    재고 변동 기록이 없습니다.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {transactions.map((tx) => (
+                      <div
+                        key={tx.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`p-2 rounded-full ${['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
+                                ? 'bg-green-100'
+                                : 'bg-red-100'
+                              }`}
+                          >
+                            {['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type) ? (
+                              <Plus className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Minus className="h-4 w-4 text-red-600" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">
+                              {transactionTypeLabels[tx.type] || tx.type}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatDateTime(tx.createdAt)}
+                              {tx.createdBy && ` · ${tx.createdBy.name}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={`font-semibold ${['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
+                                ? 'text-green-600'
+                                : 'text-red-600'
+                              }`}
+                          >
+                            {['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
+                              ? '+'
+                              : '-'}
+                            {Math.abs(tx.quantity)} {product.unit}
                           </span>
-                        )}
+                          {tx.notes && (
+                            <p className="text-xs text-muted-foreground">{tx.notes}</p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Recent Transactions */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <History className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">최근 재고 변동</h2>
-              </div>
-
-              {transactions.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  재고 변동 기록이 없습니다.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {transactions.map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-2 rounded-full ${
-                            ['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
-                              ? 'bg-green-100'
-                              : 'bg-red-100'
-                          }`}
-                        >
-                          {['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type) ? (
-                            <Plus className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <Minus className="h-4 w-4 text-red-600" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            {transactionTypeLabels[tx.type] || tx.type}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {formatDateTime(tx.createdAt)}
-                            {tx.createdBy && ` · ${tx.createdBy.name}`}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`font-semibold ${
-                            ['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
-                              ? 'text-green-600'
-                              : 'text-red-600'
-                          }`}
-                        >
-                          {['PURCHASE', 'TRANSFER_IN', 'RETURN', 'INITIAL'].includes(tx.type)
-                            ? '+'
-                            : '-'}
-                          {Math.abs(tx.quantity)} {product.unit}
-                        </span>
-                        {tx.notes && (
-                          <p className="text-xs text-muted-foreground">{tx.notes}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </SlideUp>
         </div>
-      </div>
+      </StaggerContainer>
 
       {/* Stock Adjust Modal */}
       {showAdjustModal && (

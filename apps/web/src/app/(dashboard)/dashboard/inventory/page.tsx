@@ -22,6 +22,7 @@ import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/compone
 import { inventoryApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AxiosError } from 'axios';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface Product {
   id: string;
@@ -196,9 +197,9 @@ export default function InventoryPage() {
     <div className="flex flex-col h-full">
       <Header title="재고 관리" />
 
-      <div className="flex-1 p-6 space-y-6">
+      <StaggerContainer className="flex-1 p-6 space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <SlideUp className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -284,10 +285,10 @@ export default function InventoryPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </SlideUp>
 
         {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <FadeIn className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="flex flex-1 gap-4 flex-wrap">
             <div className="relative flex-1 min-w-[200px] max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -347,27 +348,29 @@ export default function InventoryPage() {
               </Button>
             </Link>
           </div>
-        </div>
+        </FadeIn>
 
         {/* Error State */}
         {error && (
-          <Card className="border-destructive bg-destructive/5">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-medium text-destructive">오류 발생</p>
-                    <p className="text-sm text-muted-foreground">{error}</p>
+          <FadeIn>
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">오류 발생</p>
+                      <p className="text-sm text-muted-foreground">{error}</p>
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={fetchProducts}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    다시 시도
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchProducts}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  다시 시도
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </FadeIn>
         )}
 
         {/* Products List */}
@@ -382,7 +385,7 @@ export default function InventoryPage() {
             ))}
           </div>
         ) : !error && filteredProducts.length === 0 ? (
-          <div className="text-center py-12">
+          <FadeIn className="text-center py-12">
             <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               제품이 없습니다
@@ -396,105 +399,109 @@ export default function InventoryPage() {
                 제품 등록하기
               </Button>
             </Link>
-          </div>
+          </FadeIn>
         ) : !error ? (
           <div className="space-y-4">
             {/* Table Header */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground">
-                  <div className="col-span-4">제품 정보</div>
-                  <div className="col-span-2">유형/카테고리</div>
-                  <div className="col-span-2 text-right">재고 수량</div>
-                  <div className="col-span-2 text-right">판매가</div>
-                  <div className="col-span-2 text-right">작업</div>
-                </div>
-              </CardContent>
-            </Card>
+            <FadeIn>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground">
+                    <div className="col-span-4">제품 정보</div>
+                    <div className="col-span-2">유형/카테고리</div>
+                    <div className="col-span-2 text-right">재고 수량</div>
+                    <div className="col-span-2 text-right">판매가</div>
+                    <div className="col-span-2 text-right">작업</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </FadeIn>
 
             {filteredProducts.map((product) => {
               const stockStatus = getStockStatus(product);
               const totalStock = getTotalStock(product);
 
               return (
-                <Card key={product.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-12 gap-4 items-center">
-                      {/* Product Info */}
-                      <div className="col-span-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <Package className="h-5 w-5 text-gray-500" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{product.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {product.barcode && `바코드: ${product.barcode}`}
-                            </p>
+                <SlideUp key={product.id}>
+                  <Card className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Product Info */}
+                        <div className="col-span-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                              <Package className="h-5 w-5 text-gray-500" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">{product.name}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {product.barcode && `바코드: ${product.barcode}`}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Type & Category */}
-                      <div className="col-span-2">
-                        <div className="flex flex-col gap-1">
-                          <span
-                            className={`inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium ${productTypeColors[product.type]}`}
-                          >
-                            {productTypeLabels[product.type] || product.type}
-                          </span>
-                          {product.category && (
-                            <span className="text-xs text-muted-foreground">
-                              {product.category.name}
+                        {/* Type & Category */}
+                        <div className="col-span-2">
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={`inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium ${productTypeColors[product.type]}`}
+                            >
+                              {productTypeLabels[product.type] || product.type}
                             </span>
+                            {product.category && (
+                              <span className="text-xs text-muted-foreground">
+                                {product.category.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Stock Quantity */}
+                        <div className="col-span-2 text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-lg font-semibold">
+                              {totalStock} {product.unit}
+                            </span>
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${stockStatus.color}`}
+                            >
+                              {stockStatus.label}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Selling Price */}
+                        <div className="col-span-2 text-right">
+                          <span className="font-medium">
+                            {formatCurrency(product.sellingPrice)}
+                          </span>
+                          {product.costPrice && (
+                            <p className="text-xs text-muted-foreground">
+                              원가: {formatCurrency(product.costPrice)}
+                            </p>
                           )}
                         </div>
-                      </div>
 
-                      {/* Stock Quantity */}
-                      <div className="col-span-2 text-right">
-                        <div className="flex flex-col items-end gap-1">
-                          <span className="text-lg font-semibold">
-                            {totalStock} {product.unit}
-                          </span>
-                          <span
-                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${stockStatus.color}`}
-                          >
-                            {stockStatus.label}
-                          </span>
+                        {/* Actions */}
+                        <div className="col-span-2 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Link href={`/dashboard/inventory/products/${product.id}/adjust`}>
+                              <Button variant="outline" size="sm">
+                                수량 조정
+                              </Button>
+                            </Link>
+                            <Link href={`/dashboard/inventory/products/${product.id}`}>
+                              <Button variant="outline" size="sm">
+                                상세
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
                       </div>
-
-                      {/* Selling Price */}
-                      <div className="col-span-2 text-right">
-                        <span className="font-medium">
-                          {formatCurrency(product.sellingPrice)}
-                        </span>
-                        {product.costPrice && (
-                          <p className="text-xs text-muted-foreground">
-                            원가: {formatCurrency(product.costPrice)}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="col-span-2 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Link href={`/dashboard/inventory/products/${product.id}/adjust`}>
-                            <Button variant="outline" size="sm">
-                              수량 조정
-                            </Button>
-                          </Link>
-                          <Link href={`/dashboard/inventory/products/${product.id}`}>
-                            <Button variant="outline" size="sm">
-                              상세
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </SlideUp>
               );
             })}
           </div>
@@ -502,7 +509,7 @@ export default function InventoryPage() {
 
         {/* Pagination */}
         {!isLoading && !error && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-6">
+          <FadeIn className="flex items-center justify-center gap-2 mt-6">
             <Button
               variant="outline"
               size="sm"
@@ -522,9 +529,9 @@ export default function InventoryPage() {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-          </div>
+          </FadeIn>
         )}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

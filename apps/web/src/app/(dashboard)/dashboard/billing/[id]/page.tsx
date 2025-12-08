@@ -18,6 +18,7 @@ import { Header } from '@/components/layout/header';
 import { Button, Card, CardContent, Badge, Input, NativeSelect } from '@/components/ui';
 import { invoicesApi } from '@/lib/api';
 import { AxiosError } from 'axios';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface InvoiceItem {
   id: string;
@@ -242,23 +243,25 @@ export default function InvoiceDetailPage() {
       <div className="flex flex-col h-full">
         <Header title="청구서 상세" />
         <div className="flex-1 p-6">
-          <Card className="border-destructive bg-destructive/5">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-medium text-destructive">오류 발생</p>
-                    <p className="text-sm text-muted-foreground">{error}</p>
+          <FadeIn>
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">오류 발생</p>
+                      <p className="text-sm text-muted-foreground">{error}</p>
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={fetchInvoice}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    다시 시도
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchInvoice}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  다시 시도
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </FadeIn>
         </div>
       </div>
     );
@@ -268,264 +271,284 @@ export default function InvoiceDetailPage() {
     <div className="flex flex-col h-full">
       <Header title="청구서 상세" />
 
-      <div className="flex-1 p-6 space-y-6">
+      <StaggerContainer className="flex-1 p-6 space-y-6">
         {/* Back Button & Actions */}
-        <div className="flex items-center justify-between">
-          <Link href="/dashboard/billing">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              목록으로
-            </Button>
-          </Link>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Printer className="h-4 w-4 mr-2" />
-              인쇄
-            </Button>
-            {invoice.status === 'DRAFT' && (
-              <>
-                <Button variant="outline" size="sm">
-                  <Edit className="h-4 w-4 mr-2" />
-                  수정
-                </Button>
-                <Button variant="destructive" size="sm" onClick={handleDelete}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  삭제
-                </Button>
-              </>
-            )}
+        <FadeIn>
+          <div className="flex items-center justify-between">
+            <Link href="/dashboard/billing">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                목록으로
+              </Button>
+            </Link>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                <Printer className="h-4 w-4 mr-2" />
+                인쇄
+              </Button>
+              {invoice.status === 'DRAFT' && (
+                <>
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" />
+                    수정
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={handleDelete}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    삭제
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </FadeIn>
 
         {/* Invoice Header */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-bold">{invoice.invoiceNumber}</h1>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[invoice.status]}`}>
-                    {statusLabels[invoice.status]}
-                  </span>
+        <SlideUp>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-2xl font-bold">{invoice.invoiceNumber}</h1>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[invoice.status]}`}>
+                      {statusLabels[invoice.status]}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground">
+                    발행일: {formatDate(invoice.createdAt)}
+                    {invoice.dueDate && ` · 결제기한: ${formatDate(invoice.dueDate)}`}
+                  </p>
                 </div>
-                <p className="text-muted-foreground">
-                  발행일: {formatDate(invoice.createdAt)}
-                  {invoice.dueDate && ` · 결제기한: ${formatDate(invoice.dueDate)}`}
-                </p>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">병원</p>
+                  <p className="font-medium">{invoice.hospital.name}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">병원</p>
-                <p className="font-medium">{invoice.hospital.name}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </SlideUp>
 
         {/* Patient & Guardian Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold mb-4">환자 정보</h2>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">환자명</span>
-                  <span className="font-medium">{invoice.animal.name}</span>
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="font-semibold mb-4">환자 정보</h2>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">환자명</span>
+                    <span className="font-medium">{invoice.animal.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">환자 코드</span>
+                    <span className="font-mono">{invoice.animal.animalCode}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">종류</span>
+                    <span>{invoice.animal.species} {invoice.animal.breed && `(${invoice.animal.breed})`}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">환자 코드</span>
-                  <span className="font-mono">{invoice.animal.animalCode}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">종류</span>
-                  <span>{invoice.animal.species} {invoice.animal.breed && `(${invoice.animal.breed})`}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </SlideUp>
 
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold mb-4">보호자 정보</h2>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">이름</span>
-                  <span className="font-medium">{invoice.guardian.name}</span>
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="font-semibold mb-4">보호자 정보</h2>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">이름</span>
+                    <span className="font-medium">{invoice.guardian.name}</span>
+                  </div>
+                  {invoice.guardian.phone && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">연락처</span>
+                      <span>{invoice.guardian.phone}</span>
+                    </div>
+                  )}
+                  {invoice.guardian.email && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">이메일</span>
+                      <span>{invoice.guardian.email}</span>
+                    </div>
+                  )}
                 </div>
-                {invoice.guardian.phone && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">연락처</span>
-                    <span>{invoice.guardian.phone}</span>
-                  </div>
-                )}
-                {invoice.guardian.email && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">이메일</span>
-                    <span>{invoice.guardian.email}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </SlideUp>
         </div>
 
         {/* Invoice Items */}
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="font-semibold mb-4">청구 항목</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="pb-3 font-medium">항목</th>
-                    <th className="pb-3 font-medium text-right">단가</th>
-                    <th className="pb-3 font-medium text-center">수량</th>
-                    <th className="pb-3 font-medium text-right">할인</th>
-                    <th className="pb-3 font-medium text-right">금액</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.items.map((item) => (
-                    <tr key={item.id} className="border-b">
-                      <td className="py-3">
-                        <div>
-                          <span className="font-medium">{item.name}</span>
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            {itemTypeLabels[item.type] || item.type}
-                          </Badge>
-                        </div>
-                        {item.description && (
-                          <p className="text-sm text-muted-foreground">{item.description}</p>
-                        )}
-                      </td>
-                      <td className="py-3 text-right">{formatCurrency(item.unitPrice)}</td>
-                      <td className="py-3 text-center">{item.quantity}</td>
-                      <td className="py-3 text-right text-red-600">
-                        {item.discountRate && item.discountRate > 0
-                          ? `-${item.discountRate}%`
-                          : item.discountAmount && item.discountAmount > 0
-                          ? `-${formatCurrency(item.discountAmount)}`
-                          : '-'}
-                      </td>
-                      <td className="py-3 text-right font-medium">{formatCurrency(item.totalPrice)}</td>
+        <SlideUp>
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="font-semibold mb-4">청구 항목</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="pb-3 font-medium">항목</th>
+                      <th className="pb-3 font-medium text-right">단가</th>
+                      <th className="pb-3 font-medium text-center">수량</th>
+                      <th className="pb-3 font-medium text-right">할인</th>
+                      <th className="pb-3 font-medium text-right">금액</th>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t">
-                    <td colSpan={4} className="py-3 text-right font-medium">소계</td>
-                    <td className="py-3 text-right">{formatCurrency(invoice.totalAmount)}</td>
-                  </tr>
-                  {invoice.discountAmount > 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-2 text-right text-red-600">할인</td>
-                      <td className="py-2 text-right text-red-600">-{formatCurrency(invoice.discountAmount)}</td>
+                  </thead>
+                  <tbody>
+                    {invoice.items.map((item) => (
+                      <tr key={item.id} className="border-b">
+                        <td className="py-3">
+                          <div>
+                            <span className="font-medium">{item.name}</span>
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              {itemTypeLabels[item.type] || item.type}
+                            </Badge>
+                          </div>
+                          {item.description && (
+                            <p className="text-sm text-muted-foreground">{item.description}</p>
+                          )}
+                        </td>
+                        <td className="py-3 text-right">{formatCurrency(item.unitPrice)}</td>
+                        <td className="py-3 text-center">{item.quantity}</td>
+                        <td className="py-3 text-right text-red-600">
+                          {item.discountRate && item.discountRate > 0
+                            ? `-${item.discountRate}%`
+                            : item.discountAmount && item.discountAmount > 0
+                              ? `-${formatCurrency(item.discountAmount)}`
+                              : '-'}
+                        </td>
+                        <td className="py-3 text-right font-medium">{formatCurrency(item.totalPrice)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t">
+                      <td colSpan={4} className="py-3 text-right font-medium">소계</td>
+                      <td className="py-3 text-right">{formatCurrency(invoice.totalAmount)}</td>
                     </tr>
-                  )}
-                  {invoice.taxAmount > 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-2 text-right">세금</td>
-                      <td className="py-2 text-right">{formatCurrency(invoice.taxAmount)}</td>
+                    {invoice.discountAmount > 0 && (
+                      <tr>
+                        <td colSpan={4} className="py-2 text-right text-red-600">할인</td>
+                        <td className="py-2 text-right text-red-600">-{formatCurrency(invoice.discountAmount)}</td>
+                      </tr>
+                    )}
+                    {invoice.taxAmount > 0 && (
+                      <tr>
+                        <td colSpan={4} className="py-2 text-right">세금</td>
+                        <td className="py-2 text-right">{formatCurrency(invoice.taxAmount)}</td>
+                      </tr>
+                    )}
+                    <tr className="border-t-2">
+                      <td colSpan={4} className="py-3 text-right text-lg font-bold">총 금액</td>
+                      <td className="py-3 text-right text-lg font-bold">{formatCurrency(invoice.finalAmount)}</td>
                     </tr>
-                  )}
-                  <tr className="border-t-2">
-                    <td colSpan={4} className="py-3 text-right text-lg font-bold">총 금액</td>
-                    <td className="py-3 text-right text-lg font-bold">{formatCurrency(invoice.finalAmount)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                  </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </SlideUp>
 
         {/* Payment Summary & Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-sm text-muted-foreground mb-1">총 청구금액</p>
-              <p className="text-2xl font-bold">{formatCurrency(invoice.finalAmount)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-sm text-muted-foreground mb-1">수납금액</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(invoice.paidAmount)}</p>
-            </CardContent>
-          </Card>
-          <Card className={invoice.dueAmount > 0 ? 'border-red-200 bg-red-50' : ''}>
-            <CardContent className="p-6 text-center">
-              <p className="text-sm text-muted-foreground mb-1">미수금</p>
-              <p className={`text-2xl font-bold ${invoice.dueAmount > 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                {formatCurrency(invoice.dueAmount)}
-              </p>
-              {invoice.dueAmount > 0 && ['PENDING', 'PARTIAL'].includes(invoice.status) && (
-                <Button className="mt-3 w-full" onClick={() => setShowPaymentModal(true)}>
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  수납하기
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-1">총 청구금액</p>
+                <p className="text-2xl font-bold">{formatCurrency(invoice.finalAmount)}</p>
+              </CardContent>
+            </Card>
+          </SlideUp>
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-1">수납금액</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(invoice.paidAmount)}</p>
+              </CardContent>
+            </Card>
+          </SlideUp>
+          <SlideUp>
+            <Card className={invoice.dueAmount > 0 ? 'border-red-200 bg-red-50' : ''}>
+              <CardContent className="p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-1">미수금</p>
+                <p className={`text-2xl font-bold ${invoice.dueAmount > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                  {formatCurrency(invoice.dueAmount)}
+                </p>
+                {invoice.dueAmount > 0 && ['PENDING', 'PARTIAL'].includes(invoice.status) && (
+                  <Button className="mt-3 w-full" onClick={() => setShowPaymentModal(true)}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    수납하기
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </SlideUp>
         </div>
 
         {/* Payment History */}
         {invoice.payments && invoice.payments.length > 0 && (
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold mb-4">결제 내역</h2>
-              <div className="space-y-3">
-                {invoice.payments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm">{payment.paymentNumber}</span>
-                        <Badge
-                          variant={payment.status === 'COMPLETED' ? 'default' : 'secondary'}
-                        >
-                          {paymentStatusLabels[payment.status] || payment.status}
-                        </Badge>
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="font-semibold mb-4">결제 내역</h2>
+                <div className="space-y-3">
+                  {invoice.payments.map((payment) => (
+                    <div
+                      key={payment.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm">{payment.paymentNumber}</span>
+                          <Badge
+                            variant={payment.status === 'COMPLETED' ? 'default' : 'secondary'}
+                          >
+                            {paymentStatusLabels[payment.status] || payment.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {paymentMethodLabels[payment.method] || payment.method}
+                          {payment.cardCompany && ` · ${payment.cardCompany}`}
+                          {payment.paidAt && ` · ${formatDateTime(payment.paidAt)}`}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {paymentMethodLabels[payment.method] || payment.method}
-                        {payment.cardCompany && ` · ${payment.cardCompany}`}
-                        {payment.paidAt && ` · ${formatDateTime(payment.paidAt)}`}
-                      </p>
+                      <div className="text-right">
+                        <p className={`text-lg font-bold ${payment.status === 'REFUNDED' ? 'text-red-600' : 'text-green-600'}`}>
+                          {payment.status === 'REFUNDED' ? '-' : '+'}{formatCurrency(payment.amount)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`text-lg font-bold ${payment.status === 'REFUNDED' ? 'text-red-600' : 'text-green-600'}`}>
-                        {payment.status === 'REFUNDED' ? '-' : '+'}{formatCurrency(payment.amount)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </SlideUp>
         )}
 
         {/* Notes */}
         {(invoice.notes || invoice.internalNotes) && (
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold mb-4">메모</h2>
-              {invoice.notes && (
-                <div className="mb-4">
-                  <p className="text-sm text-muted-foreground mb-1">고객 메모</p>
-                  <p>{invoice.notes}</p>
-                </div>
-              )}
-              {invoice.internalNotes && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">내부 메모</p>
-                  <p className="text-yellow-800 bg-yellow-50 p-3 rounded">{invoice.internalNotes}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <SlideUp>
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="font-semibold mb-4">메모</h2>
+                {invoice.notes && (
+                  <div className="mb-4">
+                    <p className="text-sm text-muted-foreground mb-1">고객 메모</p>
+                    <p>{invoice.notes}</p>
+                  </div>
+                )}
+                {invoice.internalNotes && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">내부 메모</p>
+                    <p className="text-yellow-800 bg-yellow-50 p-3 rounded">{invoice.internalNotes}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </SlideUp>
         )}
-      </div>
+      </StaggerContainer>
 
       {/* Payment Modal */}
       {showPaymentModal && (

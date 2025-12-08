@@ -26,7 +26,7 @@ export class MedicalRecordsController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles('VET', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'VET')
   @ApiOperation({ summary: '진료 기록 작성', description: '새로운 진료 기록을 작성합니다 (수의사만)' })
   @ApiResponse({ status: 201, description: '진료 기록 작성 성공' })
   @ApiResponse({ status: 403, description: '권한 없음' })
@@ -49,7 +49,7 @@ export class MedicalRecordsController {
 
   @Get('hospital/:hospitalId')
   @UseGuards(RolesGuard)
-  @Roles('VET', 'STAFF', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'VET', 'STAFF')
   @ApiOperation({ summary: '병원별 진료 기록', description: '특정 병원의 진료 기록을 조회합니다' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -91,7 +91,7 @@ export class MedicalRecordsController {
 
   @Put(':id')
   @UseGuards(RolesGuard)
-  @Roles('VET', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'VET')
   @ApiOperation({ summary: '진료 기록 수정', description: '진료 기록을 수정합니다' })
   @ApiResponse({ status: 200, description: '진료 기록 수정 성공' })
   @ApiResponse({ status: 403, description: '권한 없음' })
@@ -106,7 +106,7 @@ export class MedicalRecordsController {
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles('VET', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'VET')
   @ApiOperation({ summary: '진료 기록 삭제', description: '진료 기록을 삭제합니다 (작성자만)' })
   @ApiResponse({ status: 200, description: '진료 기록 삭제 성공' })
   @ApiResponse({ status: 403, description: '권한 없음' })

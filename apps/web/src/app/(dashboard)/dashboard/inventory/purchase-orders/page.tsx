@@ -21,6 +21,7 @@ import { Button, Input, Card, CardContent, Badge, NativeSelect } from '@/compone
 import { inventoryApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AxiosError } from 'axios';
+import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
 interface PurchaseOrder {
   id: string;
@@ -190,156 +191,172 @@ export default function PurchaseOrdersPage() {
     <div className="flex flex-col h-full">
       <Header title="발주 관리" />
 
-      <div className="flex-1 p-6 space-y-6">
+      <StaggerContainer className="flex-1 p-6 space-y-6">
         {/* Back Link */}
-        <Link
-          href="/dashboard/inventory"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          재고 관리로 돌아가기
-        </Link>
+        <FadeIn>
+          <Link
+            href="/dashboard/inventory"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            재고 관리로 돌아가기
+          </Link>
+        </FadeIn>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Truck className="h-5 w-5 text-blue-600" />
+          <SlideUp delay={0.1}>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Truck className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">전체 발주</p>
+                    <p className="text-2xl font-bold">{stats.total}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">전체 발주</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </SlideUp>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-600" />
+          <SlideUp delay={0.2}>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Clock className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">승인 대기</p>
+                    <p className="text-2xl font-bold">{stats.pending}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">승인 대기</p>
-                  <p className="text-2xl font-bold">{stats.pending}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </SlideUp>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Package className="h-5 w-5 text-purple-600" />
+          <SlideUp delay={0.3}>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Package className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">진행 중</p>
+                    <p className="text-2xl font-bold">{stats.ordered}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">진행 중</p>
-                  <p className="text-2xl font-bold">{stats.ordered}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </SlideUp>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+          <SlideUp delay={0.4}>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">입고 완료</p>
+                    <p className="text-2xl font-bold">{stats.received}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">입고 완료</p>
-                  <p className="text-2xl font-bold">{stats.received}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </SlideUp>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Truck className="h-5 w-5 text-gray-600" />
+          <SlideUp delay={0.5}>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-100 rounded-lg">
+                    <Truck className="h-5 w-5 text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">총 발주 금액</p>
+                    <p className="text-lg font-bold">{formatCurrency(stats.totalAmount)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">총 발주 금액</p>
-                  <p className="text-lg font-bold">{formatCurrency(stats.totalAmount)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </SlideUp>
         </div>
 
         {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="flex flex-1 gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="발주번호, 공급업체로 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+        <FadeIn>
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <div className="flex flex-1 gap-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px] max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  type="search"
+                  placeholder="발주번호, 공급업체로 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <NativeSelect
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-32"
+              >
+                <option value="">모든 상태</option>
+                <option value="DRAFT">임시저장</option>
+                <option value="PENDING">승인대기</option>
+                <option value="APPROVED">승인됨</option>
+                <option value="ORDERED">주문완료</option>
+                <option value="PARTIAL">부분입고</option>
+                <option value="RECEIVED">입고완료</option>
+                <option value="CANCELLED">취소됨</option>
+              </NativeSelect>
+              <NativeSelect
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+                className="w-40"
+              >
+                <option value="">모든 공급업체</option>
+                {suppliers.map((sup) => (
+                  <option key={sup.id} value={sup.id}>
+                    {sup.name}
+                  </option>
+                ))}
+              </NativeSelect>
             </div>
-            <NativeSelect
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-32"
-            >
-              <option value="">모든 상태</option>
-              <option value="DRAFT">임시저장</option>
-              <option value="PENDING">승인대기</option>
-              <option value="APPROVED">승인됨</option>
-              <option value="ORDERED">주문완료</option>
-              <option value="PARTIAL">부분입고</option>
-              <option value="RECEIVED">입고완료</option>
-              <option value="CANCELLED">취소됨</option>
-            </NativeSelect>
-            <NativeSelect
-              value={supplierFilter}
-              onChange={(e) => setSupplierFilter(e.target.value)}
-              className="w-40"
-            >
-              <option value="">모든 공급업체</option>
-              {suppliers.map((sup) => (
-                <option key={sup.id} value={sup.id}>
-                  {sup.name}
-                </option>
-              ))}
-            </NativeSelect>
+            <Link href="/dashboard/inventory/purchase-orders/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                발주 등록
+              </Button>
+            </Link>
           </div>
-          <Link href="/dashboard/inventory/purchase-orders/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              발주 등록
-            </Button>
-          </Link>
-        </div>
+        </FadeIn>
 
         {/* Error State */}
         {error && (
-          <Card className="border-destructive bg-destructive/5">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-medium text-destructive">오류 발생</p>
-                    <p className="text-sm text-muted-foreground">{error}</p>
+          <FadeIn>
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">오류 발생</p>
+                      <p className="text-sm text-muted-foreground">{error}</p>
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={fetchOrders}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    다시 시도
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchOrders}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  다시 시도
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </FadeIn>
         )}
 
         {/* Orders List */}
@@ -354,128 +371,134 @@ export default function PurchaseOrdersPage() {
             ))}
           </div>
         ) : !error && filteredOrders.length === 0 ? (
-          <div className="text-center py-12">
-            <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">발주가 없습니다</h3>
-            <p className="text-muted-foreground mb-4">아직 등록된 발주가 없습니다.</p>
-            <Link href="/dashboard/inventory/purchase-orders/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                발주 등록하기
-              </Button>
-            </Link>
-          </div>
+          <FadeIn>
+            <div className="text-center py-12">
+              <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">발주가 없습니다</h3>
+              <p className="text-muted-foreground mb-4">아직 등록된 발주가 없습니다.</p>
+              <Link href="/dashboard/inventory/purchase-orders/new">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  발주 등록하기
+                </Button>
+              </Link>
+            </div>
+          </FadeIn>
         ) : !error ? (
           <div className="space-y-4">
             {filteredOrders.map((order) => (
-              <Card key={order.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                      {/* Order Number */}
-                      <div className="min-w-[140px]">
-                        <div className="font-mono font-medium">{order.orderNumber}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDate(order.orderDate)}
+              <SlideUp key={order.id}>
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        {/* Order Number */}
+                        <div className="min-w-[140px]">
+                          <div className="font-mono font-medium">{order.orderNumber}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatDate(order.orderDate)}
+                          </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="h-12 w-px bg-gray-200" />
+
+                        {/* Supplier Info */}
+                        <div>
+                          <h3 className="font-semibold">{order.supplier.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {order._count?.items || order.items?.length || 0}개 품목
+                          </p>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="h-12 w-px bg-gray-200" />
+
+                        {/* Amount Info */}
+                        <div className="min-w-[150px]">
+                          <div className="font-semibold">{formatCurrency(order.totalAmount)}</div>
+                          {order.expectedDeliveryDate && (
+                            <div className="text-xs text-muted-foreground">
+                              예정: {formatDate(order.expectedDeliveryDate)}
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* Divider */}
-                      <div className="h-12 w-px bg-gray-200" />
+                      {/* Status & Actions */}
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[order.status]}`}
+                        >
+                          {statusLabels[order.status] || order.status}
+                        </span>
 
-                      {/* Supplier Info */}
-                      <div>
-                        <h3 className="font-semibold">{order.supplier.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {order._count?.items || order.items?.length || 0}개 품목
-                        </p>
-                      </div>
-
-                      {/* Divider */}
-                      <div className="h-12 w-px bg-gray-200" />
-
-                      {/* Amount Info */}
-                      <div className="min-w-[150px]">
-                        <div className="font-semibold">{formatCurrency(order.totalAmount)}</div>
-                        {order.expectedDeliveryDate && (
-                          <div className="text-xs text-muted-foreground">
-                            예정: {formatDate(order.expectedDeliveryDate)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Status & Actions */}
-                    <div className="flex items-center gap-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[order.status]}`}
-                      >
-                        {statusLabels[order.status] || order.status}
-                      </span>
-
-                      {/* Quick Actions */}
-                      <div className="flex gap-2">
-                        {order.status === 'PENDING' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-green-600"
-                            onClick={() => handleApprove(order.id)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            승인
-                          </Button>
-                        )}
-                        {['DRAFT', 'PENDING'].includes(order.status) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600"
-                            onClick={() => handleCancel(order.id)}
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            취소
-                          </Button>
-                        )}
-                        <Link href={`/dashboard/inventory/purchase-orders/${order.id}`}>
-                          <Button variant="outline" size="sm">
-                            상세보기
-                          </Button>
-                        </Link>
+                        {/* Quick Actions */}
+                        <div className="flex gap-2">
+                          {order.status === 'PENDING' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-600"
+                              onClick={() => handleApprove(order.id)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              승인
+                            </Button>
+                          )}
+                          {['DRAFT', 'PENDING'].includes(order.status) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600"
+                              onClick={() => handleCancel(order.id)}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              취소
+                            </Button>
+                          )}
+                          <Link href={`/dashboard/inventory/purchase-orders/${order.id}`}>
+                            <Button variant="outline" size="sm">
+                              상세보기
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </SlideUp>
             ))}
           </div>
         ) : null}
 
         {/* Pagination */}
         {!isLoading && !error && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-6">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <FadeIn>
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </FadeIn>
         )}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

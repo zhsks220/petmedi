@@ -151,7 +151,7 @@ export default function BillingPage() {
     paid: invoices.filter((i) => i.status === 'PAID').length,
     totalDue: invoices
       .filter((i) => ['PENDING', 'PARTIAL', 'OVERDUE'].includes(i.status))
-      .reduce((sum, i) => sum + i.dueAmount, 0),
+      .reduce((sum, i) => sum + (i.dueAmount ?? 0), 0),
   };
 
   return (

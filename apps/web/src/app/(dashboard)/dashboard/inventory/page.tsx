@@ -126,7 +126,11 @@ export default function InventoryPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchProducts = useCallback(async () => {
-    if (!hospitalId) return;
+    if (!hospitalId) {
+      setIsLoading(false);
+      setError('병원 정보가 없습니다. 병원을 먼저 선택해주세요.');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {

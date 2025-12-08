@@ -252,9 +252,13 @@ export default function DashboardPage() {
                   <CardContent className="p-5 flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium text-slate-500">{stat.title}</p>
-                      <h4 className="text-2xl font-semibold mt-2 text-slate-900">
-                        {isLoading ? '-' : formatValue(stat.value, stat.format)}
-                      </h4>
+                      {isLoading ? (
+                        <div className="h-8 w-20 mt-2 bg-slate-200 rounded animate-pulse" />
+                      ) : (
+                        <h4 className="text-2xl font-semibold mt-2 text-slate-900">
+                          {formatValue(stat.value, stat.format)}
+                        </h4>
+                      )}
                     </div>
                     <div className="p-2 bg-slate-100 rounded-md text-slate-600">
                       <stat.icon className="h-4 w-4" />
@@ -276,7 +280,18 @@ export default function DashboardPage() {
                   <CardContent>
                     <div className="h-[300px] w-full mt-4">
                       {isLoading ? (
-                        <div className="h-full flex items-center justify-center text-slate-400">로딩 중...</div>
+                        <div className="h-full flex flex-col justify-end gap-2 px-4">
+                          <div className="flex items-end gap-3 h-full">
+                            {[40, 65, 45, 80, 55, 70, 50].map((h, i) => (
+                              <div key={i} className="flex-1 bg-slate-200 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+                            ))}
+                          </div>
+                          <div className="flex justify-between">
+                            {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
+                              <span key={d} className="text-xs text-slate-300">{d}</span>
+                            ))}
+                          </div>
+                        </div>
                       ) : (
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={weeklyTrend}>
@@ -320,7 +335,23 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
-                      <div className="py-8 text-center text-slate-400">로딩 중...</div>
+                      <div className="space-y-2">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div key={i} className="flex items-center justify-between p-3 rounded-md">
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-full bg-slate-200 animate-pulse" />
+                              <div className="space-y-2">
+                                <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
+                                <div className="h-3 w-16 bg-slate-100 rounded animate-pulse" />
+                              </div>
+                            </div>
+                            <div className="text-right space-y-2">
+                              <div className="h-4 w-12 bg-slate-200 rounded animate-pulse" />
+                              <div className="h-5 w-10 bg-slate-100 rounded-full animate-pulse" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     ) : !stats?.todayAppointments?.length ? (
                       <div className="py-12 text-center text-slate-500 text-sm">오늘 예정된 예약이 없습니다.</div>
                     ) : (
@@ -338,7 +369,7 @@ export default function DashboardPage() {
                             </div>
                             <div className="text-right">
                               <p className="text-xs font-semibold text-slate-900">
-                                {apt.startTime ? new Date(apt.startTime).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' }) : '-'}
+                                {apt.startTime || '-'}
                               </p>
                               <span className={
                                 `inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium mt-1 ${apt.status === 'CONFIRMED' ? 'bg-blue-50 text-blue-700' :
@@ -367,8 +398,14 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[200px] w-full flex items-center justify-center">
-                      {/* Simplified Pie Chart */}
-                      {speciesDistribution.length > 0 ? (
+                      {isLoading ? (
+                        <div className="relative">
+                          <div className="h-40 w-40 rounded-full border-[20px] border-slate-200 animate-pulse" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="h-20 w-20 rounded-full bg-white" />
+                          </div>
+                        </div>
+                      ) : speciesDistribution.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -425,9 +462,13 @@ export default function DashboardPage() {
                     <div className="mt-4 flex items-center justify-between">
                       <div>
                         <p className="text-xs text-slate-400">이번 달 매출</p>
-                        <p className="text-xl font-bold mt-1">
-                          {formatValue(stats?.revenue?.thisMonth || 0, 'currency')}
-                        </p>
+                        {isLoading ? (
+                          <div className="h-7 w-28 mt-1 bg-white/20 rounded animate-pulse" />
+                        ) : (
+                          <p className="text-xl font-bold mt-1">
+                            {formatValue(stats?.revenue?.thisMonth || 0, 'currency')}
+                          </p>
+                        )}
                       </div>
                       <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
                         <TrendingUp className="h-4 w-4 text-white" />
@@ -448,7 +489,20 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <div className="py-8 text-center text-slate-400">로딩 중...</div>
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-slate-200 animate-pulse" />
+                            <div className="space-y-2">
+                              <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
+                              <div className="h-3 w-32 bg-slate-100 rounded animate-pulse" />
+                            </div>
+                          </div>
+                          <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
                   ) : !stats?.recentRecords?.length ? (
                     <div className="py-12 text-center text-slate-500 text-sm">최근 진료 기록이 없습니다.</div>
                   ) : (

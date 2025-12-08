@@ -773,7 +773,7 @@ export default function ProductDetailPage() {
               <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
                 <Button
                   type="button"
-                  variant={adjustType === 'add' ? 'white' : 'ghost'}
+                  variant={adjustType === 'add' ? 'secondary' : 'ghost'}
                   className={`flex-1 rounded-md shadow-sm ${adjustType === 'add' ? 'bg-white text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
                   onClick={() => setAdjustType('add')}
                 >
@@ -782,7 +782,7 @@ export default function ProductDetailPage() {
                 </Button>
                 <Button
                   type="button"
-                  variant={adjustType === 'subtract' ? 'white' : 'ghost'}
+                  variant={adjustType === 'subtract' ? 'secondary' : 'ghost'}
                   className={`flex-1 rounded-md shadow-sm ${adjustType === 'subtract' ? 'bg-white text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
                   onClick={() => setAdjustType('subtract')}
                 >

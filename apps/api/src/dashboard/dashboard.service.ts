@@ -20,216 +20,184 @@ export class DashboardService {
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
-    // 병렬로 모든 통계 쿼리 실행
-    const [
-      // 기본 카운트
-      totalAnimals,
-      totalRecords,
-
-      // 오늘 예약 통계
-      todayAppointments,
-      confirmedAppointments,
-      completedAppointments,
-      cancelledAppointments,
-
-      // 이번 주 예약
-      weeklyAppointments,
-
-      // 이번 달 매출
-      monthlyRevenue,
-      monthlyInvoices,
-      pendingPayments,
-
-      // 재고 알림
-      lowStockProducts,
-      expiringSoonProducts,
-
-      // 최근 진료 기록
-      recentRecords,
-
-      // 오늘 예약 목록
-      todayAppointmentsList,
-    ] = await Promise.all([
-      // 등록된 동물 수
-      this.prisma.animal.count({
-        where: {
-          guardians: {
-            some: {
-              guardian: {
-                hospitalStaff: {
-                  some: { hospitalId },
-                },
+    // 순차 실행으로 변경 (pgbouncer 연결 풀 고갈 방지)
+    // 등록된 동물 수
+    const totalAnimals = await this.prisma.animal.count({
+      where: {
+        guardians: {
+          some: {
+            guardian: {
+              hospitalStaff: {
+                some: { hospitalId },
               },
             },
           },
         },
-      }),
+      },
+    });
 
-      // 진료 기록 수
-      this.prisma.medicalRecord.count({
-        where: { hospitalId },
-      }),
+    // 진료 기록 수
+    const totalRecords = await this.prisma.medicalRecord.count({
+      where: { hospitalId },
+    });
 
-      // 오늘 전체 예약 수
-      this.prisma.appointment.count({
-        where: {
-          hospitalId,
-          appointmentDate: {
-            gte: today,
-            lt: tomorrow,
-          },
+    // 오늘 전체 예약 수
+    const todayAppointments = await this.prisma.appointment.count({
+      where: {
+        hospitalId,
+        appointmentDate: {
+          gte: today,
+          lt: tomorrow,
         },
-      }),
+      },
+    });
 
-      // 오늘 확정된 예약
-      this.prisma.appointment.count({
-        where: {
-          hospitalId,
-          appointmentDate: {
-            gte: today,
-            lt: tomorrow,
-          },
-          status: 'CONFIRMED',
+    // 오늘 확정된 예약
+    const confirmedAppointments = await this.prisma.appointment.count({
+      where: {
+        hospitalId,
+        appointmentDate: {
+          gte: today,
+          lt: tomorrow,
         },
-      }),
+        status: 'CONFIRMED',
+      },
+    });
 
-      // 오늘 완료된 예약
-      this.prisma.appointment.count({
-        where: {
-          hospitalId,
-          appointmentDate: {
-            gte: today,
-            lt: tomorrow,
-          },
-          status: 'COMPLETED',
+    // 오늘 완료된 예약
+    const completedAppointments = await this.prisma.appointment.count({
+      where: {
+        hospitalId,
+        appointmentDate: {
+          gte: today,
+          lt: tomorrow,
         },
-      }),
+        status: 'COMPLETED',
+      },
+    });
 
-      // 오늘 취소된 예약
-      this.prisma.appointment.count({
-        where: {
-          hospitalId,
-          appointmentDate: {
-            gte: today,
-            lt: tomorrow,
-          },
-          status: 'CANCELLED',
+    // 오늘 취소된 예약
+    const cancelledAppointments = await this.prisma.appointment.count({
+      where: {
+        hospitalId,
+        appointmentDate: {
+          gte: today,
+          lt: tomorrow,
         },
-      }),
+        status: 'CANCELLED',
+      },
+    });
 
-      // 이번 주 예약 수
-      this.prisma.appointment.count({
-        where: {
-          hospitalId,
-          appointmentDate: {
-            gte: weekStart,
-            lt: weekEnd,
-          },
-          status: { not: 'CANCELLED' },
+    // 이번 주 예약 수
+    const weeklyAppointments = await this.prisma.appointment.count({
+      where: {
+        hospitalId,
+        appointmentDate: {
+          gte: weekStart,
+          lt: weekEnd,
         },
-      }),
+        status: { not: 'CANCELLED' },
+      },
+    });
 
-      // 이번 달 매출 합계
-      this.prisma.payment.aggregate({
-        where: {
-          invoice: { hospitalId },
-          paidAt: {
-            gte: monthStart,
-            lt: monthEnd,
-          },
-          status: 'COMPLETED',
+    // 이번 달 매출 합계
+    const monthlyRevenue = await this.prisma.payment.aggregate({
+      where: {
+        invoice: { hospitalId },
+        paidAt: {
+          gte: monthStart,
+          lt: monthEnd,
         },
-        _sum: { amount: true },
-      }),
+        status: 'COMPLETED',
+      },
+      _sum: { amount: true },
+    });
 
-      // 이번 달 청구서 수
-      this.prisma.invoice.count({
-        where: {
-          hospitalId,
-          issueDate: {
-            gte: monthStart,
-            lt: monthEnd,
-          },
+    // 이번 달 청구서 수
+    const monthlyInvoices = await this.prisma.invoice.count({
+      where: {
+        hospitalId,
+        issueDate: {
+          gte: monthStart,
+          lt: monthEnd,
         },
-      }),
+      },
+    });
 
-      // 미수금 합계
-      this.prisma.invoice.aggregate({
-        where: {
-          hospitalId,
-          status: { in: ['PENDING', 'PARTIAL'] },
-        },
-        _sum: { totalAmount: true, paidAmount: true },
-      }),
+    // 미수금 합계
+    const pendingPayments = await this.prisma.invoice.aggregate({
+      where: {
+        hospitalId,
+        status: { in: ['PENDING', 'PARTIAL'] },
+      },
+      _sum: { totalAmount: true, paidAmount: true },
+    });
 
-      // 재고 부족 제품
-      this.prisma.inventoryStock.count({
-        where: {
-          product: { hospitalId },
-          quantity: { lte: 0 },
-        },
-      }).then(async (count) => {
-        // 또는 재발주 기준 이하인 제품
-        const lowStock = await this.prisma.product.count({
-          where: {
-            hospitalId,
-            inventoryStocks: {
-              some: {
-                quantity: {
-                  lte: 10, // 기본값
-                },
-              },
+    // 재고 부족 제품
+    const zeroStockCount = await this.prisma.inventoryStock.count({
+      where: {
+        product: { hospitalId },
+        quantity: { lte: 0 },
+      },
+    });
+    const lowStockCount = await this.prisma.product.count({
+      where: {
+        hospitalId,
+        inventoryStocks: {
+          some: {
+            quantity: {
+              lte: 10,
             },
           },
-        });
-        return lowStock || count;
-      }),
+        },
+      },
+    });
+    const lowStockProducts = lowStockCount || zeroStockCount;
 
-      // 유통기한 임박 제품 (30일 이내)
-      this.prisma.inventoryStock.count({
-        where: {
-          product: { hospitalId },
-          expirationDate: {
-            lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            gte: today,
-          },
+    // 유통기한 임박 제품 (30일 이내)
+    const expiringSoonProducts = await this.prisma.inventoryStock.count({
+      where: {
+        product: { hospitalId },
+        expirationDate: {
+          lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          gte: today,
         },
-      }),
+      },
+    });
 
-      // 최근 진료 기록 (5개)
-      this.prisma.medicalRecord.findMany({
-        where: { hospitalId },
-        include: {
-          animal: {
-            select: { id: true, name: true, species: true },
-          },
+    // 최근 진료 기록 (5개)
+    const recentRecords = await this.prisma.medicalRecord.findMany({
+      where: { hospitalId },
+      include: {
+        animal: {
+          select: { id: true, name: true, species: true },
         },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-      }),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
 
-      // 오늘 예약 목록
-      this.prisma.appointment.findMany({
-        where: {
-          hospitalId,
-          appointmentDate: {
-            gte: today,
-            lt: tomorrow,
-          },
-          status: { not: 'CANCELLED' },
+    // 오늘 예약 목록
+    const todayAppointmentsList = await this.prisma.appointment.findMany({
+      where: {
+        hospitalId,
+        appointmentDate: {
+          gte: today,
+          lt: tomorrow,
         },
-        include: {
-          animal: {
-            select: { id: true, name: true, species: true },
-          },
-          vet: {
-            select: { id: true, name: true },
-          },
+        status: { not: 'CANCELLED' },
+      },
+      include: {
+        animal: {
+          select: { id: true, name: true, species: true },
         },
-        orderBy: { startTime: 'asc' },
-        take: 10,
-      }),
-    ]);
+        vet: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: { startTime: 'asc' },
+      take: 10,
+    });
 
     const pendingAmount = (pendingPayments._sum.totalAmount || 0) - (pendingPayments._sum.paidAmount || 0);
 

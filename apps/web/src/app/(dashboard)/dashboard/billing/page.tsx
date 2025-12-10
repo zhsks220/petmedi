@@ -81,7 +81,8 @@ const statusColors: Record<string, string> = {
   REFUNDED: 'bg-purple-50 text-purple-700 border-purple-200',
 };
 
-const formatCurrency = (amount: number) => {
+const formatCurrency = (amount: number | null | undefined) => {
+  if (amount == null) return '₩0';
   return new Intl.NumberFormat('ko-KR', {
     style: 'currency',
     currency: 'KRW',

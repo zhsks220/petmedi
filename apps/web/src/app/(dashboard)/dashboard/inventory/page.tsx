@@ -22,8 +22,13 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button, Input, Card, CardContent, Badge, NativeSelect, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
-import { inventoryApi } from '@/lib/api';
+import { inventoryApi, hospitalsApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+
+interface Hospital {
+  id: string;
+  name: string;
+}
 import { AxiosError } from 'axios';
 import { StaggerContainer, SlideUp, FadeIn } from '@/components/ui/motion-wrapper';
 
@@ -111,8 +116,9 @@ const getStockStatus = (product: Product) => {
 export default function InventoryPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const hospitalId = user?.hospitalId || '';
 
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [selectedHospitalId, setSelectedHospitalId] = useState<string>('');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState<InventoryStats | null>(null);
@@ -125,8 +131,29 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // 병원 목록 가져오기
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      try {
+        const response = await hospitalsApi.getMy();
+        const hospitalList = response.data || [];
+        setHospitals(hospitalList);
+
+        // 기본 병원 설정: user.hospitalId가 있으면 사용, 없으면 첫 번째 병원
+        if (user?.hospitalId) {
+          setSelectedHospitalId(user.hospitalId);
+        } else if (hospitalList.length > 0) {
+          setSelectedHospitalId(hospitalList[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch hospitals:', err);
+      }
+    };
+    fetchHospitals();
+  }, [user?.hospitalId]);
+
   const fetchProducts = useCallback(async () => {
-    if (!hospitalId) {
+    if (!selectedHospitalId) {
       setIsLoading(false);
       setError('병원 정보가 없습니다. 병원을 먼저 선택해주세요.');
       return;
@@ -134,7 +161,7 @@ export default function InventoryPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await inventoryApi.getProducts(hospitalId, {
+      const response = await inventoryApi.getProducts(selectedHospitalId, {
         ...(typeFilter && { type: typeFilter }),
         ...(categoryFilter && { categoryId: categoryFilter }),
         ...(stockFilter === 'low' && { lowStock: true }),
@@ -153,27 +180,27 @@ export default function InventoryPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [hospitalId, typeFilter, categoryFilter, stockFilter, searchTerm, currentPage]);
+  }, [selectedHospitalId, typeFilter, categoryFilter, stockFilter, searchTerm, currentPage]);
 
   const fetchCategories = useCallback(async () => {
-    if (!hospitalId) return;
+    if (!selectedHospitalId) return;
     try {
-      const response = await inventoryApi.getCategories(hospitalId);
+      const response = await inventoryApi.getCategories(selectedHospitalId);
       setCategories(response.data || []);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
     }
-  }, [hospitalId]);
+  }, [selectedHospitalId]);
 
   const fetchStats = useCallback(async () => {
-    if (!hospitalId) return;
+    if (!selectedHospitalId) return;
     try {
-      const response = await inventoryApi.getStats(hospitalId);
+      const response = await inventoryApi.getStats(selectedHospitalId);
       setStats(response.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
-  }, [hospitalId]);
+  }, [selectedHospitalId]);
 
   useEffect(() => {
     fetchProducts();
@@ -193,7 +220,21 @@ export default function InventoryPage() {
         description="의약품, 소모품 등 병원 내 재고 현황을 관리합니다"
         icon={Package}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* 병원 선택 드롭다운 */}
+          {hospitals.length > 0 && (
+            <NativeSelect
+              value={selectedHospitalId}
+              onChange={(e) => setSelectedHospitalId(e.target.value)}
+              className="w-48 h-9"
+            >
+              {hospitals.map((hospital) => (
+                <option key={hospital.id} value={hospital.id}>
+                  {hospital.name}
+                </option>
+              ))}
+            </NativeSelect>
+          )}
           <Link href="/dashboard/inventory/purchase-orders">
             <Button variant="outline" size="sm" className="gap-2">
               <Truck className="h-4 w-4" />

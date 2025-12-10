@@ -122,6 +122,17 @@ const SPECIES_LABELS: Record<string, string> = {
   unknown: '기타',
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: '대기',
+  CONFIRMED: '확정',
+  IN_PROGRESS: '진행중',
+  COMPLETED: '완료',
+  CANCELLED: '취소',
+  NO_SHOW: '노쇼',
+  SCHEDULED: '예정',
+  RESCHEDULED: '변경',
+};
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [weeklyTrend, setWeeklyTrend] = useState<WeeklyTrend[]>([]);
@@ -372,12 +383,16 @@ export default function DashboardPage() {
                                 {apt.startTime || '-'}
                               </p>
                               <span className={
-                                `inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium mt-1 ${apt.status === 'CONFIRMED' ? 'bg-blue-50 text-blue-700' :
+                                `inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium mt-1 ${
+                                  apt.status === 'CONFIRMED' ? 'bg-blue-50 text-blue-700' :
                                   apt.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' :
-                                    'bg-slate-100 text-slate-600'
+                                  apt.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-700' :
+                                  apt.status === 'CANCELLED' ? 'bg-red-50 text-red-700' :
+                                  apt.status === 'NO_SHOW' ? 'bg-red-50 text-red-700' :
+                                  'bg-slate-100 text-slate-600'
                                 }`
                               }>
-                                {apt.status === 'CONFIRMED' ? '확정' : apt.status === 'COMPLETED' ? '완료' : apt.status === 'PENDING' ? '대기' : apt.status}
+                                {STATUS_LABELS[apt.status] || apt.status}
                               </span>
                             </div>
                           </div>

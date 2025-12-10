@@ -277,7 +277,7 @@ export class DashboardService {
     // 날짜별로 그룹핑
     const countByDate = new Map<string, number>();
     appointments.forEach(apt => {
-      const dateStr = apt.appointmentDate.toISOString().split('T')[0];
+      const dateStr = apt.appointmentDate.toISOString().split('T')[0] as string;
       countByDate.set(dateStr, (countByDate.get(dateStr) || 0) + 1);
     });
 
@@ -286,11 +286,12 @@ export class DashboardService {
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = date.toISOString().split('T')[0] as string;
+      const dayOfWeekArr = ['일', '월', '화', '수', '목', '금', '토'];
 
       trends.push({
         date: dateStr,
-        dayOfWeek: ['일', '월', '화', '수', '목', '금', '토'][date.getDay()],
+        dayOfWeek: dayOfWeekArr[date.getDay()] as string,
         count: countByDate.get(dateStr) || 0,
       });
     }

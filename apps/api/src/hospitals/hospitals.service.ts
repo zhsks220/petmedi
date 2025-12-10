@@ -90,7 +90,7 @@ export class HospitalsService {
           isNetworkMember: true,
           operatingHours: true,
           createdAt: true,
-          _count: { select: { staff: true, animals: true } },
+          _count: { select: { staff: true } },
         },
         orderBy: { name: 'asc' },
       }),
